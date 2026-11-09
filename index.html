@@ -38,7 +38,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.135.0/Build/Cesium/Cesium.js" defer></script>
 </head>
 <body>
-<header class="top"><div><div class="brand">GEO<span style="color:#ff823a"> / </span>EXPERIENCE LAB <b>v0.4</b></div><div class="sub">全球地图 · A/B/C 技术可行性验证 · 产品经理评审视图</div></div><div class="pill">公开展示页 · 非生产环境</div></header>
+<header class="top"><div><div class="brand">GEO<span style="color:#ff823a"> / </span>EXPERIENCE LAB <b>v0.5</b></div><div class="sub">全球地图 · A/B/C 技术可行性验证 · 产品经理评审视图</div></div><div class="pill">公开展示页 · 非生产环境</div></header>
 <main class="app">
  <section class="left">
   <div class="controls">
@@ -47,17 +47,17 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px
   </div>
   <div class="scene" id="scene">
    <div id="cesium"></div><div id="fallback" class="fallback"><div class="globe">◎</div><strong id="fallbackText">正在初始化全球地图…</strong><span class="muted">如果地图无法加载，请检查浏览器 WebGL 与网络/CDN</span></div>
-   <div class="sceneTag"><b id="sceneMode">A · 全球卫星影像</b><div id="locationText" class="sub">纽约曼哈顿 · 40.7580, -73.9855</div></div>
+   <div class="sceneTag"><b id="sceneMode">A · 全球卫星影像</b><div id="locationText" class="sub">纽约曼哈顿 · 40.7580, -73.9855</div><div id="selectionText" class="sub">① 点击地图选点 ② 点击播放按钮</div></div>
    <div id="effect" aria-hidden="true"></div><div class="fxCaption" id="fxCaption">3D GEO-ANCHORED VISUAL · 地图触点 · 云雾与扩散环 · 无真实事件数据</div>
   </div>
   <div class="footControls">
-   <button class="active" id="modeA">A · 卫星影像</button><button id="modeB">B · 真实 3D</button><button id="modeC">C · 混合</button><button class="primary" id="animate">▶ 重播云雾与扩散环</button><button id="reloadA">刷新卫星影像</button><button id="runTest">测量 6 秒</button>
+   <button class="active" id="modeA">A · 卫星影像</button><button id="modeB">B · 真实 3D</button><button id="modeC">C · 混合</button><button class="primary" id="animate" disabled>先点地图选位置</button><button id="reloadA">刷新卫星影像</button><button id="runTest">测量 6 秒</button>
    <div class="sub" id="mapMsg">轻触/点击地图任意位置，可直接选点播放示意动画。</div>
   </div>
  </section>
  <aside class="right">
   <section class="card"><h2>01 / 验证范围和证据等级</h2>
-   <div class="notice">这里只验证地图接入、浏览器可视化、交互和成本量级。地图选点只用于非武器化教学画面：生成一个三维云团与装饰性扩散波环，不表示冲击波物理、真实影响范围或建筑损毁。</div>
+   <div class="notice">这里只验证地图接入、浏览器可视化、交互和成本量级。先点击地图确定下一次视觉演示的位置，再按播放按钮。播放中的云团不会因为误触而移动或重新开始；所有动画只是非物理视觉示意，不表示真实冲击波、影响范围或建筑损毁。</div>
    <div class="result"><span>CesiumJS 地图引擎</span><b class="status" id="runtimeStatus">加载中</b></div>
    <div class="result"><span>A / 全球卫星影像</span><b id="aStatus">等待加载</b></div>
    <div class="result"><span>B / 摄影测量 3D Tiles</span><b id="bStatus">需 Cesium ion Token</b></div>
@@ -114,13 +114,20 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px
 (function(){
 "use strict";
 var $=function(id){return document.getElementById(id);};
-var state={viewer:null,tileset:null,mode:"A",layer:"A",token:"",lon:-73.9855,lat:40.758,height:5500,heading:0,pitch:-65,name:"Manhattan, New York",fps:0,entries:[],log:[],switchStart:0,sceneReady:false,frameTimes:[],lastFrame:0,lastSearch:0};
+var state={viewer:null,tileset:null,mode:"A",layer:"A",token:"",selected:null,lon:-73.9855,lat:40.758,height:5500,heading:0,pitch:-65,name:"Manhattan, New York",fps:0,entries:[],log:[],switchStart:0,sceneReady:false,frameTimes:[],lastFrame:0,lastSearch:0};
 var C,perf=window.performance;
 function stamp(){return new Date().toLocaleTimeString("zh-CN",{hour12:false});}
 function note(t){state.log.unshift("["+stamp()+"] "+t);state.log=state.log.slice(0,24);$("log").textContent=state.log.join("\n");}
 function status(t){$("mapMsg").textContent=t;note(t);}
 function pickMode(m){state.mode=m;["A","B","C"].forEach(function(x){$("mode"+x).classList.toggle("active",x===m);});}
-function country(n,lat,lon){state.name=n;state.lat=lat;state.lon=lon;fxWorld.lat=lat;fxWorld.lon=lon;fxWorld.ground=0;$("locationText").textContent=n+" · "+lat.toFixed(4)+", "+lon.toFixed(4);if(state.viewer)fly();}
+function country(n,lat,lon){
+ state.name=n;state.lat=lat;state.lon=lon;
+ state.selected=null;
+ if(state.viewer&&fxWorld.marker){state.viewer.entities.remove(fxWorld.marker);fxWorld.marker=null;}
+ $("locationText").textContent=n+" · "+lat.toFixed(4)+", "+lon.toFixed(4);
+ syncPlayButton();
+ if(state.viewer)fly();
+}
 function fly(){if(!state.viewer)return;state.viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(state.lon,state.lat,state.height),orientation:{heading:C.Math.toRadians(state.heading),pitch:C.Math.toRadians(state.pitch),roll:0},duration:1.25});}
 function firstRendered(start){if(!state.viewer)return;var h=function(){state.viewer.scene.postRender.removeEventListener(h);$("load").textContent=Math.round(perf.now()-start)+" ms";};state.viewer.scene.postRender.addEventListener(h);}
 function showFallback(t){$("fallbackText").textContent=t;$("fallback").style.display="flex";}
@@ -219,7 +226,7 @@ async function changeMode(m){
 
 /* V0.4: World-space educational atmosphere; no physical blast scale or hazard calculation. */
 var fxWorld={collection:null,ringEntities:[],puffs:[],sprites:null,marker:null,
- origin:null,lon:0,lat:0,ground:0,scale:1150,start:0,t:0,active:false,settled:false,lastUpdate:0};
+ origin:null,lon:0,lat:0,ground:0,locked:null,activeMarker:null,scale:1150,start:0,t:0,active:false,settled:false,lastUpdate:0};
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function seeded(i,k){var n=Math.sin(i*92.74+k*173.29)*53872.954;return n-Math.floor(n);}
 function cloudTexture(kind){
@@ -258,30 +265,51 @@ function ringTexture(){
 function disposeWorldFx(){
  if(!state.viewer)return;
  if(fxWorld.collection){state.viewer.scene.primitives.remove(fxWorld.collection);fxWorld.collection=null;}
+ if(fxWorld.activeMarker){state.viewer.entities.remove(fxWorld.activeMarker);fxWorld.activeMarker=null;}
  for(var i=0;i<fxWorld.ringEntities.length;i++)state.viewer.entities.remove(fxWorld.ringEntities[i]);
- fxWorld.ringEntities=[];fxWorld.puffs=[];fxWorld.active=false;fxWorld.settled=false;
+ fxWorld.ringEntities=[];fxWorld.puffs=[];fxWorld.active=false;fxWorld.settled=false;fxWorld.locked=null;
 }
 function centerWorld(lon,lat,alt){return C.Cartesian3.fromDegrees(lon,lat,alt);}
-function selectMapPoint(cartesian,autoPlay){
+function syncPlayButton(){
+ var btn=$("animate"),sel=state.selected;
+ if(fxWorld.active){
+  btn.disabled=true;btn.textContent="正在播放（位置已锁定）";
+ }else if(sel){
+  btn.disabled=false;btn.textContent="▶ 在选定位置播放";
+ }else{
+  btn.disabled=true;btn.textContent="先点地图选位置";
+ }
+ if(sel){
+  $("selectionText").textContent="下一次选点："+sel.lat.toFixed(5)+", "+sel.lon.toFixed(5)+(fxWorld.active?" · 当前动画不受影响":" · 等待点击播放");
+ }else if(fxWorld.active&&fxWorld.locked){
+  $("selectionText").textContent="正在播放，已锁定："+fxWorld.locked.lat.toFixed(5)+", "+fxWorld.locked.lon.toFixed(5);
+ }else if(fxWorld.settled&&fxWorld.locked){
+  $("selectionText").textContent="播放结束 · 原位置固定 · 再点新位置才能重播";
+ }else{
+  $("selectionText").textContent="① 点击地图选择位置 ② 按按钮播放";
+ }
+}
+function selectMapPoint(cartesian){
  if(!cartesian||!state.viewer)return;
  var geo=C.Cartographic.fromCartesian(cartesian);
  if(!geo)return;
  var lon=C.Math.toDegrees(geo.longitude),lat=C.Math.toDegrees(geo.latitude);
  if(!Number.isFinite(lon)||!Number.isFinite(lat))return;
- state.lon=lon;state.lat=lat;state.name="地图手动选点";
- fxWorld.lon=lon;fxWorld.lat=lat;
- fxWorld.ground=clamp(geo.height||0,-200,10000);
- $("locationText").textContent="已选位置 · "+lat.toFixed(5)+", "+lon.toFixed(5);
+ // Only update the pending selection. The current scene and committed origin never change here.
+ var selected={lon:lon,lat:lat,ground:clamp(geo.height||0,-200,10000)};
+ state.selected=Object.freeze(selected);
  if(!fxWorld.marker){
-  fxWorld.marker=state.viewer.entities.add({name:"教学可视化观察点",
-   position:centerWorld(lon,lat,fxWorld.ground+30),
-   point:{pixelSize:11,color:C.Color.fromCssColorString("#ffc5a0"),outlineColor:C.Color.fromCssColorString("#32262b"),outlineWidth:3,disableDepthTestDistance:Number.POSITIVE_INFINITY}
+  fxWorld.marker=state.viewer.entities.add({name:"待播放位置（轻触选择）",
+   position:centerWorld(lon,lat,selected.ground+35),
+   point:{pixelSize:12,color:C.Color.fromCssColorString("#5edbc9"),outlineColor:C.Color.fromCssColorString("#0e2225"),outlineWidth:3,disableDepthTestDistance:Number.POSITIVE_INFINITY}
   });
  }else{
-  fxWorld.marker.position=centerWorld(lon,lat,fxWorld.ground+30);
+  fxWorld.marker.position=centerWorld(lon,lat,selected.ground+35);
  }
- note("手动地图选点："+lat.toFixed(5)+", "+lon.toFixed(5));
- if(autoPlay)plotEffect();else status("已选地理位置；可播放教学云雾和装饰性扩散波。");
+ syncPlayButton();
+ note("已选择下一次位置："+lat.toFixed(5)+", "+lon.toFixed(5)+
+   (fxWorld.active?"；当前动画继续锁定原位置":"；需按播放按钮才会开始"));
+ status(fxWorld.active?"当前动画继续在原位置播放，新选点只会影响下一次播放。":"位置已选定；点击「在选定位置播放」。");
 }
 function installMapPick(){
  var v=state.viewer;
@@ -297,9 +325,9 @@ function installMapPick(){
    try{pos=v.camera.pickEllipsoid(e.position,C.Ellipsoid.WGS84);}catch(err){}
   }
   if(!C.defined(pos)){status("未命中地球或三维表面，请点地图上的陆地。");return;}
-  selectMapPoint(pos,true);
+  selectMapPoint(pos);
  },C.ScreenSpaceEventType.LEFT_CLICK);
- note("地图单击/轻触选点已启用；位置与特效始终绑定经纬度");
+ note("已启用选点与播放分离：轻触只选择，播放按钮才创建视觉动画；播放中坐标固定");
 }
 function spawnCloud(){
  var fx=fxWorld,v=state.viewer;
@@ -382,16 +410,35 @@ function updateWorldFx(){
   b.width=diameter;b.height=diameter;
   b.color=new C.Color(1,1,1,(p.kind==="ground"?.32:.73)*vis);
  }
- if(t>=11.4){fx.active=false;fx.settled=true;status("云雾示意已停留在地球坐标中；可以继续缩放或旋转观察。");}
+ if(t>=11.4){fx.active=false;fx.settled=true;syncPlayButton();status("本次视觉演示结束；原点保持固定。选择新的位置，再按按钮才会再次播放。");}
 }
 function plotEffect(){
- if(!state.viewer){status("请先成功加载地图，再进行示意演示");return;}
- if(!Number.isFinite(fxWorld.lon)||!Number.isFinite(fxWorld.lat)){status("请先轻触地图选点");return;}
+ if(!state.viewer){status("地图尚未加载成功");return;}
+ if(fxWorld.active){status("当前动画尚未结束；请完成后选择新位置并播放");return;}
+ var selected=state.selected;
+ if(!selected){status("请先点击地图上的位置，随后按播放按钮");return;}
+ // Capture and freeze the committed point BEFORE changing any active scene objects.
+ var fixed=Object.freeze({lon:selected.lon,lat:selected.lat,ground:selected.ground});
  disposeWorldFx();
+ fxWorld.locked=fixed;
+ fxWorld.lon=fixed.lon;fxWorld.lat=fixed.lat;fxWorld.ground=fixed.ground;
+ if(fxWorld.marker){state.viewer.entities.remove(fxWorld.marker);fxWorld.marker=null;}
+ fxWorld.activeMarker=state.viewer.entities.add({
+  name:"当前动画锁定位置",
+  position:centerWorld(fixed.lon,fixed.lat,fixed.ground+25),
+  point:{pixelSize:9,color:C.Color.fromCssColorString("#ffb58e"),
+   outlineColor:C.Color.fromCssColorString("#2d1d20"),outlineWidth:3,
+   disableDepthTestDistance:Number.POSITIVE_INFINITY}
+ });
+ // Consume the selection: no replay is possible until the user taps a new point.
+ state.selected=null;
  spawnCloud();createGroundRings();
- fxWorld.start=performance.now();fxWorld.t=0;fxWorld.lastUpdate=0;fxWorld.active=true;
+ fxWorld.start=performance.now();fxWorld.t=0;fxWorld.lastUpdate=0;
+ fxWorld.active=true;fxWorld.settled=false;
+ syncPlayButton();
  $("fxCaption").classList.add("active");
- note("已在 "+fxWorld.lat.toFixed(5)+","+fxWorld.lon.toFixed(5)+" 创建 3D 经纬度锚定的云团和装饰性扩散环");
+ note("开始定点视觉演示："+fixed.lat.toFixed(5)+","+fixed.lon.toFixed(5)+
+  "；播放期间误触不会重启或移动");
  setTimeout(function(){$("fxCaption").classList.remove("active");},3600);
 }
 function anchor(){updateWorldFx();}
@@ -441,7 +488,7 @@ async function measure(){
  state.entries.push(record);$("testStatus").textContent="已采样 "+state.entries.length+" 组";note("实机采样："+mode+"/"+layer+" | "+record.averageSceneFps+" FPS | 新增资源记录 "+record.resourceEntriesDelta);
 }
 function download(){
- var payload={title:"Geo Experience Lab V0.4",exportedAt:new Date().toISOString(),tests:state.entries,assumptions:"静态网页不会收集供应商账单；成本为基于公开价的情景测算，实际用量须来自提供商计费后台。"};
+ var payload={title:"Geo Experience Lab V0.5",exportedAt:new Date().toISOString(),tests:state.entries,assumptions:"静态网页不会收集供应商账单；成本为基于公开价的情景测算，实际用量须来自提供商计费后台。"};
  var blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="geo-lab-measurements.json";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
 }
 async function init(){
@@ -450,7 +497,7 @@ async function init(){
  try{
   var viewer=state.viewer=new C.Viewer("cesium",{baseLayerPicker:false,baseLayer:false,terrainProvider:new C.EllipsoidTerrainProvider(),animation:false,timeline:false,homeButton:false,geocoder:false,navigationHelpButton:false,sceneModePicker:false,selectionIndicator:false,infoBox:false,fullscreenButton:false,requestRenderMode:false});
   viewer.scene.globe.depthTestAgainstTerrain=false;viewer.scene.screenSpaceCameraController.minimumZoomDistance=30;viewer.camera.setView({destination:C.Cartesian3.fromDegrees(state.lon,state.lat,state.height),orientation:{heading:0,pitch:C.Math.toRadians(state.pitch),roll:0}});
-  viewer.scene.postRender.addEventListener(function(){state.frameTimes.push(perf.now());if(state.frameTimes.length>1000)state.frameTimes.splice(0,400);anchor();});installMapPick();fxWorld.lon=state.lon;fxWorld.lat=state.lat;fxWorld.ground=0;
+  viewer.scene.postRender.addEventListener(function(){state.frameTimes.push(perf.now());if(state.frameTimes.length>1000)state.frameTimes.splice(0,400);anchor();});installMapPick();syncPlayButton();
   $("runtimeStatus").textContent="已初始化";await activate("A");setInterval(renderStats,2000);
  }catch(e){$("runtimeStatus").textContent="初始化失败";showFallback("WebGL / Cesium 初始化失败");status(String(e.message||e));}
 }
