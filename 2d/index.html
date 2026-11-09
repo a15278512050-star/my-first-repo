@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="color-scheme" content="dark"/><title>Geo Experience · 2D Visual Benchmark</title>
+<style>
+:root{--bg:#080f19;--panel:#0b1524ec;--line:#ffffff25;--ink:#edf5f5;--muted:#9cabb9;--amber:#ff9b54;--cyan:#49d5cf}
+*{box-sizing:border-box}html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);font-family:Inter,"Noto Sans SC",system-ui,-apple-system,sans-serif;color:var(--ink)}button,input{font:inherit}button{cursor:pointer;transition:background .15s,border-color .15s}button:disabled{cursor:not-allowed;opacity:.5}
+#mapLayer,#fxLayer{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none}#mapLayer{z-index:1;background:radial-gradient(ellipse at center,#15263b,#080f19)}#fxLayer{z-index:2;pointer-events:none}
+.mapShade{position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(90deg,#050a12b3,transparent 45%,#03060c19),linear-gradient(0deg,#05080ca0,transparent 22%)}
+.top{position:absolute;top:18px;left:22px;right:22px;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:12px;pointer-events:none}.brand{display:flex;align-items:center;gap:10px;min-width:0}.brandMark{width:34px;height:34px;display:grid;place-items:center;color:var(--amber);border:1px solid #ff9b5477;border-radius:9px;background:#221c20}.brandName{font-size:13px;font-weight:800;letter-spacing:.15em;white-space:nowrap}.brandSub{font-size:10px;color:#bdcbd5;letter-spacing:.16em;margin-top:3px}.topRight{font-size:11px;color:#ced9d9;background:#081220ce;border:1px solid var(--line);padding:9px 13px;border-radius:18px;white-space:nowrap}
+.panel{position:absolute;z-index:6;left:22px;top:84px;width:335px;max-height:calc(100dvh - 150px);overflow:auto;border-radius:16px;border:1px solid #ffffff32;background:var(--panel);box-shadow:0 16px 60px #020710aa;backdrop-filter:blur(18px);padding:19px}.eyebrow{font-size:10px;color:var(--cyan);letter-spacing:.19em;font-weight:750}.panel h1{font-size:23px;line-height:1.24;margin:9px 0 8px;font-weight:800;letter-spacing:-.03em}.intro{font-size:12px;line-height:1.65;color:#afbfce;margin:0 0 18px}.divider{border:0;border-top:1px solid var(--line);margin:17px 0}label{display:block;font-size:11px;font-weight:700;color:#cbd5df;margin-bottom:8px}.search{display:flex;gap:6px}.search input{background:#0b1828;border:1px solid #ffffff36;border-radius:8px;color:white;outline:0;padding:11px 10px;width:100%;min-width:0;font-size:12px}.search input:focus{border-color:#4bd4cb}.search button{background:#26384a;color:white;border:1px solid #435466;padding:0 13px;border-radius:8px;white-space:nowrap}.presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.pill{font-size:11px;color:#cadce4;border:1px solid #ffffff29;border-radius:18px;background:#ffffff0a;padding:7px 10px}.pill:hover{border-color:#56d4c1}
+.location{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-top:4px}.locStrong{font-size:12px;font-weight:700;line-height:1.6}.locHint{font-size:10px;color:#a7b8c7;line-height:1.55;margin-top:3px}.statusDot{height:7px;width:7px;background:var(--cyan);box-shadow:0 0 10px #49d5cf88;border-radius:50%;flex-shrink:0;margin-top:7px}
+.primary{display:flex;align-items:center;justify-content:center;width:100%;padding:13px;background:linear-gradient(115deg,#ffaf62,#eb7650);color:#241713;border:0;border-radius:9px;font-weight:800;font-size:13px;box-shadow:0 8px 22px #b54a2333}.primary:hover:not(:disabled){filter:brightness(1.08)}.secondary{border-radius:8px;border:1px solid #ffffff32;background:#ffffff0e;color:#dce7ed;padding:10px 12px;font-size:12px}.row{display:flex;gap:7px;margin-top:9px}.row>button{flex:1}
+.progressLine{height:5px;border-radius:4px;background:#ffffff19;overflow:hidden;margin:13px 0 8px}.progressFill{height:100%;width:0;background:linear-gradient(90deg,#49d5cf,#ffb36b);border-radius:4px}.timeRow{display:flex;justify-content:space-between;color:#a4b5bf;font-size:10px;font-variant-numeric:tabular-nums}.chapters{display:flex;justify-content:space-between;font-size:10px;color:#8b9ca8;margin-top:11px}.chapters .on{color:#ffb782;font-weight:800}.notice{font-size:10px;color:#acb9c2;line-height:1.6;margin:14px 0 0;background:#ffffff08;border:1px solid #ffffff17;border-radius:8px;padding:10px}.notice b{color:#f5cf9d}.mini{font-size:10px;color:#b7c7d2;line-height:1.6;margin-top:10px}
+.mapControls{position:absolute;z-index:5;right:22px;top:85px;display:flex;flex-direction:column;gap:6px}.mapControls button{width:39px;height:39px;background:#0a1624d9;color:white;border:1px solid var(--line);border-radius:9px;font-size:21px}.mapControls button:hover{border-color:var(--cyan)}
+.bottom{z-index:5;position:absolute;bottom:17px;left:22px;right:22px;pointer-events:none;display:flex;align-items:end;justify-content:space-between;gap:12px}.noteBadge{background:#081523d8;border:1px solid #ffffff31;border-radius:9px;padding:9px 11px;font-size:10px;color:#e0e9ef;max-width:430px;line-height:1.55}.credits{font-size:10px;color:#d1dfe9;text-shadow:0 1px 6px #000;max-width:410px;text-align:right}.loading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;border:1px solid #ffffff35;background:#0c1621dc;color:#d5e5eb;border-radius:8px;padding:9px 12px;font-size:11px;pointer-events:none;display:none}
+@media(max-width:680px){.top{top:10px;left:12px;right:12px}.brandMark{height:29px;width:29px}.brandName{font-size:10px}.brandSub{font-size:9px}.topRight{font-size:9px;padding:8px}.panel{left:9px;right:9px;top:auto;bottom:12px;width:auto;max-height:53dvh;padding:14px 15px;border-radius:16px}.panel h1{font-size:18px;margin:6px 0}.intro{margin:0 0 10px;font-size:11px}.panel .divider{margin:11px 0}.search input{padding:9px}.mapControls{top:66px;right:11px}.mapControls button{width:35px;height:35px;font-size:18px}.bottom{left:11px;right:11px;bottom:auto;top:155px;display:block}.noteBadge{font-size:9px;max-width:60%;padding:6px 7px}.credits{display:none}.chapters{margin-top:6px}.notice{margin:9px 0 0;padding:7px}.row{margin-top:6px}.row button{padding:7px}.panel .mini{display:none}}
+</style>
+</head>
+<body>
+<canvas id="mapLayer"></canvas><canvas id="fxLayer"></canvas><div class="mapShade"></div><div class="loading" id="mapLoading">正在读取卫星影像…</div>
+<header class="top"><div class="brand"><div class="brandMark">◎</div><div><div class="brandName">GEO EXPERIENCE <span style="color:var(--amber)">/</span> 2D</div><div class="brandSub">VISUAL BASELINE · V0.6</div></div></div><div class="topRight">● 2D VISUAL PROOF</div></header>
+<aside class="panel">
+ <div class="eyebrow">VISUAL EXPERIENCE TEST</div><h1>二维场景 · 视觉演示</h1><p class="intro">用真实卫星影像作为底图。先选择观察位置，再播放一段独立、固定于地图坐标的云团与分层扩散视觉动画。</p>
+ <form id="searchForm"><label for="search">搜索地点</label><div class="search"><input id="search" placeholder="城市、地名、地址" autocomplete="off"/><button type="submit" id="searchBtn">查找</button></div></form>
+ <div class="presets"><button class="pill" data-city="ny">纽约</button><button class="pill" data-city="paris">巴黎</button><button class="pill" data-city="tokyo">东京</button><button class="pill" data-city="shanghai">上海</button></div>
+ <hr class="divider"/><div class="location"><div><label style="margin:0 0 4px">待播放观察点</label><div class="locStrong" id="selectedText">尚未选点</div><div class="locHint" id="guideText">① 轻触地图任意位置 ② 点击播放按钮</div></div><span class="statusDot"></span></div>
+ <hr class="divider"/><button class="primary" id="playBtn" disabled>先点地图选位置</button><div class="row"><button class="secondary" id="pauseBtn" disabled>暂停</button><button class="secondary" id="clearBtn">清除画面</button></div>
+ <div class="progressLine"><div class="progressFill" id="progress"></div></div><div class="timeRow"><span id="stage">未开始</span><span id="timer">00:00 / 00:12</span></div><div class="chapters" id="chapters"><span>起始</span><span>上升</span><span>扩散</span><span>成形</span><span>停留</span></div>
+ <div class="notice"><b>科学教育视觉说明</b>：这里展示的是无比例、非物理的影视化云团及装饰性扩散波纹，不提供真实事件范围、强度或建筑损坏预测。</div>
+ <div class="mini" id="message">卫星影像由 Esri World Imagery 提供；本页面是独立的二维保底技术验证。</div>
+</aside>
+<div class="mapControls"><button id="zin" aria-label="放大地图">+</button><button id="zout" aria-label="缩小地图">−</button><button id="recenter" aria-label="回到当前选点">⌖</button></div>
+<div class="bottom"><div class="noteBadge" id="floatingHint">拖动 / 双指缩放地图 · 点击一次选点 · 按按钮才会开始播放</div><div class="credits">Imagery © Esri, Maxar, Earthstar Geographics, and the GIS User Community · 地点搜索 © OpenStreetMap contributors</div></div>
+<script>
+(function(){"use strict";
+const $=id=>document.getElementById(id),mapCanvas=$('mapLayer'),fxCanvas=$('fxLayer'),m=mapCanvas.getContext('2d',{alpha:false}),f=fxCanvas.getContext('2d');
+const view={lon:-73.9855,lat:40.758,zoom:11.3},tiles=new Map(),pointers=new Map();let W=0,H=0,dpr=1,dirty=true,goodTiles=0,badTiles=0,interaction=null;
+const state={selected:null,active:null,playing:false,paused:false,elapsed:0,started:0,duration:12,lastFrame:0};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)); const ease=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
+function project(lon,lat,z){const sin=Math.sin(clamp(lat,-85.0511,85.0511)*Math.PI/180),size=256*Math.pow(2,z);return{x:(lon+180)/360*size,y:(.5-Math.log((1+sin)/(1-sin))/(4*Math.PI))*size}}
+function unproject(x,y,z){const size=256*Math.pow(2,z);return{lon:x/size*360-180,lat:180/Math.PI*Math.atan(Math.sinh(Math.PI*(1-2*y/size)))}}
+function wrapLon(l){return(l+540)%360-180}function normalized(){view.lon=wrapLon(view.lon);view.lat=clamp(view.lat,-82,82);view.zoom=clamp(view.zoom,2,18)}
+function screenPoint(lon,lat){const center=project(view.lon,view.lat,view.zoom),pos=project(lon,lat,view.zoom),world=256*Math.pow(2,view.zoom);let dx=pos.x-center.x;dx=(dx+world/2)%world;if(dx<0)dx+=world;dx-=world/2;return{x:W/2+dx,y:H/2+pos.y-center.y}}
+function fromScreen(x,y){const c=project(view.lon,view.lat,view.zoom);const p=unproject(c.x+x-W/2,c.y+y-H/2,view.zoom);return{lon:wrapLon(p.lon),lat:clamp(p.lat,-80,80)}}
+function zoomAt(delta,x=W/2,y=H/2){const old=fromScreen(x,y);view.zoom=clamp(view.zoom+delta,2,18);const at=project(old.lon,old.lat,view.zoom),c=unproject(at.x-(x-W/2),at.y-(y-H/2),view.zoom);view.lon=c.lon;view.lat=c.lat;normalized();dirty=true;}
+function makeTile(z,x,y){const count=2**z;if(y<0||y>=count)return null;const xx=(x%count+count)%count,key=z+'/'+xx+'/'+y;let t=tiles.get(key);if(t)return t;
+ t={status:'loading',image:new Image()};t.image.crossOrigin='anonymous';t.image.onload=function(){t.status='ok';goodTiles++;dirty=true;$('mapLoading').style.display='none';};t.image.onerror=function(){t.status='bad';badTiles++;dirty=true;if(goodTiles===0&&badTiles>=3){$('mapLoading').textContent='卫星瓦片连接失败：请检查网络';$('mapLoading').style.display='block';}};
+ t.image.src='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+z+'/'+y+'/'+xx;tiles.set(key,t);if(tiles.size>340){const keys=[...tiles.keys()];for(let i=0;i<80;i++)tiles.delete(keys[i]);}return t;}
+function drawMap(){if(!dirty)return;dirty=false;m.setTransform(dpr,0,0,dpr,0,0);m.fillStyle='#14243a';m.fillRect(0,0,W,H);
+ const z=Math.floor(view.zoom),size=256*Math.pow(2,view.zoom-z),center=project(view.lon,view.lat,view.zoom),left=center.x-W/2,top=center.y-H/2;
+ const x0=Math.floor(left/size),x1=Math.ceil((left+W)/size),y0=Math.floor(top/size),y1=Math.ceil((top+H)/size);
+ let waiting=0;
+ for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const posX=Math.round(x*size-left),posY=Math.round(y*size-top),w=Math.ceil(size)+1, tile=makeTile(z,x,y);if(!tile)continue;
+ if(tile.status==='ok'){try{m.drawImage(tile.image,posX,posY,w,w);}catch(e){}}
+ else{waiting++;m.fillStyle=(x+y)%2?'#15273a':'#192d41';m.fillRect(posX,posY,w,w);m.strokeStyle='#ffffff10';m.strokeRect(posX,posY,w,w);}}
+ if(goodTiles===0&&waiting>0){m.fillStyle='#ffffff44';m.textAlign='center';m.font='12px system-ui';m.fillText('等待卫星影像数据…',W/2,H*.47);}
+ // Gentle scene grade; keep map image fully readable.
+ const grd=m.createLinearGradient(0,0,0,H);grd.addColorStop(0,'#02071440');grd.addColorStop(.45,'#01030900');grd.addColorStop(1,'#02071430');m.fillStyle=grd;m.fillRect(0,0,W,H);
+}
+function resize(){dpr=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;for(const c of[mapCanvas,fxCanvas]){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);}dirty=true}
+window.addEventListener('resize',resize);resize();
+function place(lon,lat){const p={lon:wrapLon(lon),lat:clamp(lat,-80,80)};state.selected=p;$('selectedText').textContent=p.lat.toFixed(5)+'°, '+p.lon.toFixed(5)+'°';$('guideText').textContent=state.playing?'当前动画保持原坐标，下一次位置已记录':'位置已选定，请按播放按钮开始';syncButtons();$('message').textContent='观察点已选择。点击播放之前不会产生任何新动画。';}
+function syncButtons(){$('playBtn').disabled=state.playing||!state.selected;$('playBtn').textContent=state.playing?'正在播放（位置锁定）':state.selected?'▶ 在所选位置播放':'先点地图选位置';$('pauseBtn').disabled=!state.playing;$('pauseBtn').textContent=state.paused?'继续':'暂停';}
+function begin(){if(state.playing||!state.selected)return;state.active={lon:state.selected.lon,lat:state.selected.lat};state.selected=null;state.elapsed=0;state.started=performance.now();state.playing=true;state.paused=false;$('selectedText').textContent='当前动画坐标已锁定';$('guideText').textContent='本次播放期间点其他位置，不会改变现有动画';syncButtons();$('floatingHint').textContent='演示正固定在已选择的地理坐标 · 地图仍可自由移动和缩放'}
+function clear(){state.active=null;state.playing=false;state.paused=false;state.elapsed=0;state.selected=null;$('selectedText').textContent='尚未选点';$('guideText').textContent='① 轻触地图任意位置 ② 点击播放按钮';$('floatingHint').textContent='拖动 / 双指缩放地图 · 点击一次选点 · 按按钮才会开始播放';syncButtons()}
+$('playBtn').addEventListener('click',begin);$('clearBtn').addEventListener('click',clear);$('pauseBtn').addEventListener('click',()=>{if(!state.playing)return;state.paused=!state.paused;if(!state.paused)state.started=performance.now()-state.elapsed*1000;syncButtons()});
+$('zin').onclick=()=>zoomAt(.95);$('zout').onclick=()=>zoomAt(-.95);$('recenter').onclick=()=>{const p=state.selected||state.active;if(p){view.lon=p.lon;view.lat=p.lat;view.zoom=Math.max(view.zoom,11);normalized();dirty=true;}};
+const presets={ny:[40.758,-73.9855,11.6],paris:[48.8583,2.2945,11.6],tokyo:[35.6812,139.7671,11.7],shanghai:[31.2304,121.4737,11.5]};
+document.querySelectorAll('[data-city]').forEach(b=>b.onclick=()=>{const p=presets[b.dataset.city];view.lat=p[0];view.lon=p[1];view.zoom=p[2];dirty=true;$('message').textContent='已前往城市；请在地图上选择具体观察点。'});
+$('searchForm').onsubmit=async e=>{e.preventDefault();const q=$('search').value.trim();if(q.length<2){$('message').textContent='请至少输入两个字符';return;}const btn=$('searchBtn');btn.disabled=true;btn.textContent='查找中';try{const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),7500);const res=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(q),{signal:controller.signal,headers:{'Accept-Language':'zh-CN,zh'}});clearTimeout(timeout);if(!res.ok)throw new Error('HTTP '+res.status);const data=await res.json();if(!data.length)throw new Error('未找到这个地点');view.lat=Number(data[0].lat);view.lon=Number(data[0].lon);view.zoom=12;normalized();dirty=true;$('message').textContent='已找到：'+data[0].display_name.slice(0,62)+'。请点击地图选择观察点。';}catch(err){$('message').textContent='搜索未完成：'+err.message+'。可直接拖动地图选点。';}finally{btn.disabled=false;btn.textContent='查找';}};
+let dragMoved=false,justPinched=false;
+function moveView(dx,dy){const c=project(view.lon,view.lat,view.zoom),p=unproject(c.x-dx,c.y-dy,view.zoom);view.lon=p.lon;view.lat=p.lat;normalized();dirty=true;}
+mapCanvas.addEventListener('pointerdown',e=>{mapCanvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY});if(pointers.size===1){dragMoved=false;justPinched=false;}else{justPinched=true;dragMoved=true;}}, {passive:false});
+mapCanvas.addEventListener('pointermove',e=>{const old=pointers.get(e.pointerId);if(!old)return;const dx=e.clientX-old.x,dy=e.clientY-old.y;old.x=e.clientX;old.y=e.clientY;if(Math.abs(e.clientX-old.sx)+Math.abs(e.clientY-old.sy)>8)dragMoved=true;
+ if(pointers.size===1){if(dragMoved)moveView(dx,dy);}
+ else if(pointers.size===2){const list=[...pointers.values()];const other=list.find(p=>p!==old);const oldDist=Math.hypot(other.x-(old.x-dx),other.y-(old.y-dy)),newDist=Math.hypot(other.x-old.x,other.y-old.y);if(oldDist>3&&newDist>3){const midX=(old.x+other.x)/2,midY=(old.y+other.y)/2;zoomAt(Math.log2(newDist/oldDist),midX,midY);}}},{passive:false});
+function endPointer(e){const p=pointers.get(e.pointerId);if(!p)return;pointers.delete(e.pointerId);if(pointers.size===0&&!dragMoved&&!justPinched){const pt=fromScreen(e.clientX,e.clientY);place(pt.lon,pt.lat)}if(pointers.size===0)justPinched=false;}
+mapCanvas.addEventListener('pointerup',endPointer);mapCanvas.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);dragMoved=true;});
+mapCanvas.addEventListener('dblclick',e=>{e.preventDefault();zoomAt(1,e.clientX,e.clientY)});
+mapCanvas.addEventListener('wheel',e=>{e.preventDefault();zoomAt(clamp(-e.deltaY/380,-.8,.8),e.clientX,e.clientY)},{passive:false});
+function makeCloud(){const c=document.createElement('canvas');c.width=640;c.height=640;const g=c.getContext('2d'),data=g.createImageData(640,640),buf=data.data;
+ const frac=v=>v-Math.floor(v);const hash=(x,y)=>frac(Math.sin(x*127.1+y*311.7)*43758.5453123);
+ function noise(x,y){const ix=Math.floor(x),iy=Math.floor(y),u=x-ix,v=y-iy,xx=u*u*(3-2*u),yy=v*v*(3-2*v),a=hash(ix,iy),b=hash(ix+1,iy),c=hash(ix,iy+1),d=hash(ix+1,iy+1);return (a+(b-a)*xx)*(1-yy)+(c+(d-c)*xx)*yy}
+ function fbm(x,y){return noise(x*.013,y*.013)*.49+noise(x*.037,y*.037)*.29+noise(x*.083,y*.083)*.15+noise(x*.17,y*.17)*.07}
+ for(let y=0;y<640;y++)for(let x=0;x<640;x++){
+  const n=fbm(x,y),t=n-.5,dx=(x-320),dy=(y-197),rip=(Math.sin(x*.039+y*.041)*.027+Math.sin(x*.082-y*.044)*.022),
+  dome=Math.sqrt(Math.pow(dx/(253+22*t),2)+Math.pow((dy+45)/(134+18*t),2)),
+  brim=Math.sqrt(Math.pow(dx/(285+18*t),2)+Math.pow((y-259)/(91+12*t),2)),
+  rim=Math.max((1.08-dome)*5.7,(1.05-brim)*7.0),
+  trunkY=(y-276)/315,twist=10*Math.sin(y*.031)+5*Math.sin(y*.067),
+  trunkWidth=51+22*Math.pow(clamp(trunkY,0,1),2)+18*(1-clamp(trunkY,0,1));
+  const stem=1.0-Math.abs(dx-twist)/(trunkWidth*(.89+t*.25));
+  const inStem=trunkY>=0&&trunkY<=1.02?stem*6.8:-5,
+  bottom=Math.sqrt(Math.pow(dx/135,2)+Math.pow((y-556)/42,2)),
+  mask=Math.max(rim+rip*4.4+t*.9,inStem+t*.6,(1.1-bottom)*5+t*.65),
+  alpha=clamp(mask,.0,1.0)*clamp(.4+(n-.17)*1.25,0,1);
+  if(alpha<=0)continue;
+  const inCap=mask===rim+rip*4.4+t*.9||y<312,light=clamp((640-y)/640*.37+(320-x)/640*.25+.38+t*.43,.12,1.08);
+  const warm=clamp((y-205)/445,0,1)*.32;
+  const idx=(y*640+x)*4;
+  buf[idx]=clamp((inCap?133:98)*light+28+warm*105,0,255);
+  buf[idx+1]=clamp((inCap?133:104)*light+27+warm*40,0,255);
+  buf[idx+2]=clamp((inCap?141:118)*light+29-warm*9,0,255);
+  buf[idx+3]=Math.round(255*alpha);
+ }
+ g.putImageData(data,0,0);
+ // Light billowing highlights are composited into the same georeferenced sprite.
+ g.globalCompositeOperation='screen';for(let i=0;i<110;i++){const phi=(i*.6180339887%1)*Math.PI*2,rr=Math.sqrt((i*.381966011%1)),px=320+Math.cos(phi)*rr*220,py=197+Math.sin(phi)*rr*95-45;
+ const radius=13+((i*43)%29),grad=g.createRadialGradient(px-6,py-5,0,px,py,radius);grad.addColorStop(0,'rgba(235,226,217,.12)');grad.addColorStop(1,'rgba(235,226,217,0)');g.fillStyle=grad;g.fillRect(px-radius,py-radius,radius*2,radius*2);}
+ g.globalCompositeOperation='source-over';return c;
+}
+let cloud;function paintTarget(p,color,small=false){if(!p)return;const a=screenPoint(p.lon,p.lat);if(a.x<-45||a.x>W+45||a.y<-45||a.y>H+45)return;f.save();f.strokeStyle=color;f.lineWidth=2;f.shadowBlur=14;f.shadowColor=color;const r=small?12:16;f.beginPath();f.arc(a.x,a.y,r,0,Math.PI*2);f.stroke();f.beginPath();f.moveTo(a.x-r-8,a.y);f.lineTo(a.x-r+1,a.y);f.moveTo(a.x+r-1,a.y);f.lineTo(a.x+r+8,a.y);f.moveTo(a.x,a.y-r-8);f.lineTo(a.x,a.y-r+1);f.moveTo(a.x,a.y+r-1);f.lineTo(a.x,a.y+r+8);f.stroke();f.restore();}
+function renderEffect(t){if(!state.active)return;const p=screenPoint(state.active.lon,state.active.lat),scale=Math.pow(2,view.zoom-11.3),S=210*scale;
+ if(p.x<-S*8||p.x>W+S*8||p.y<-S*8||p.y>H+S*8)return;
+ f.save();
+ const ignition=clamp(1-t/1.65,0,1);if(ignition>0){const light=f.createRadialGradient(p.x,p.y,0,p.x,p.y,Math.max(2,S*1.65));light.addColorStop(0,'rgba(255,236,201,'+(.63*ignition)+')');light.addColorStop(.19,'rgba(255,164,99,'+(.37*ignition)+')');light.addColorStop(.72,'rgba(235,105,78,'+(.12*ignition)+')');light.addColorStop(1,'rgba(200,92,73,0)');f.globalCompositeOperation='screen';f.fillStyle=light;f.fillRect(p.x-S*1.8,p.y-S*1.8,S*3.6,S*3.6);f.globalCompositeOperation='source-over';}
+ // Five visual ripples. Their growth is artistic and has no physical distance meaning.
+ for(let k=0;k<5;k++){const age=t-(.14+k*.58);if(age<0)continue;const q=clamp(age/(4.9+k*.35),0,1),r=S*(.18+(2.1+k*.38)*ease(q)),fade=clamp(age*2.5,0,1)*clamp((7.8+k*.27-age)/2.9,0,1);if(fade<=0)continue;
+  f.save();f.shadowBlur=8*scale;f.shadowColor='rgba(255,188,133,.4)';f.strokeStyle='rgba(255,226,196,'+(.36*fade)+')';f.lineWidth=Math.max(1,4*scale*(1-q*.7));f.beginPath();f.ellipse(p.x,p.y,r,r*.78,0,0,Math.PI*2);f.stroke();f.shadowBlur=0;f.strokeStyle='rgba(255,162,115,'+(.33*fade)+')';f.lineWidth=Math.max(.7,12*scale*(1-q*.8));f.beginPath();f.ellipse(p.x,p.y,r-4*scale,Math.max(1,r*.78-3*scale),0,0,Math.PI*2);f.stroke();f.restore();}
+ const grow=ease((t-.45)/5.5);if(grow>.0){const sz=S*(.73+grow*.85),height=sz*1.24,opacity=clamp((t-.55)*.75,0,1);f.save();f.globalAlpha=opacity;f.filter='drop-shadow(0 8px '+Math.max(3,S*.10)+'px rgba(27,26,31,.52))';f.drawImage(cloud,p.x-sz/2,p.y-height*.96,sz,height);f.restore();}
+ const mist=ease((t-.6)/2.2)*clamp((12-t)/4,0,1);if(mist){const glow=f.createRadialGradient(p.x,p.y,0,p.x,p.y,S*.64);glow.addColorStop(0,'rgba(200,152,141,'+(.17*mist)+')');glow.addColorStop(.5,'rgba(117,112,118,'+(.12*mist)+')');glow.addColorStop(1,'rgba(117,112,118,0)');f.fillStyle=glow;f.fillRect(p.x-S,p.y-S,S*2,S*2);}
+ f.restore();paintTarget(state.active,'#ffaa6c',true);
+}
+function updateUI(){const sec=Math.min(state.elapsed,state.duration),time='00:'+String(Math.floor(sec)).padStart(2,'0');$('progress').style.width=(sec/state.duration*100).toFixed(2)+'%';$('timer').textContent=time+' / 00:12';const stages=['起始','上升','扩散','成形','停留'],idx=sec<1?0:sec<3.5?1:sec<6.5?2:sec<9?3:4;$('stage').textContent=state.active?stages[idx]:'未开始';document.querySelectorAll('#chapters span').forEach((el,i)=>el.classList.toggle('on',i===idx&&!!state.active));}
+function loop(time){const delta=state.lastFrame?Math.min((time-state.lastFrame)/1000,.08):0;state.lastFrame=time;if(state.playing&&!state.paused){state.elapsed=Math.min(state.duration,state.elapsed+delta);if(state.elapsed>=state.duration){state.playing=false;syncButtons();$('guideText').textContent=state.selected?'下一次位置已选定，可再次点击播放':'演示结束；选择新位置后可再次播放';$('message').textContent='已完成本次演示。原视觉场景仍固定于地理位置，可继续缩放地图。';}}
+ drawMap();f.setTransform(dpr,0,0,dpr,0,0);f.clearRect(0,0,W,H);renderEffect(state.elapsed);if(state.selected)paintTarget(state.selected,'#4de5d3',false);updateUI();requestAnimationFrame(loop);}
+cloud=makeCloud();$('mapLoading').style.display='block';syncButtons();requestAnimationFrame(loop);
+window.__geo2dTest={state,view,place,begin,clear,zoomAt,screenPoint,fromScreen,paint:renderEffect,getTileStatus:()=>({goodTiles,badTiles,cache:tiles.size})};
+})();
+</script>
+</body>
+</html>
