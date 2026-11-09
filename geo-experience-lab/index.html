@@ -49,7 +49,7 @@ label{display:block;font-size:11px;color:#b5c8da;font-weight:700;margin:12px 0 5
 <div class="map-hud"><div><strong id="liveMode">A / 卫星影像</strong> · 浏览地区：<span id="placeLabel">曼哈顿，纽约</span></div><div id="mapStatus" style="margin-top:4px">等待 Cesium 初始化…</div></div>
 <div class="map-bottom"><div class="overlay-right" id="coords">尚未点击地图选定特效中心</div><div class="overlay-right">影像和模型版权归各数据提供方 · 仅限预研</div></div>
 </div>
-<div class="map-actions"><button class="btn primary" id="play" disabled>▶ 播放 18 秒云团与扩散波纹</button><button class="btn" id="save">＋ 记录本次测试</button><button class="btn" id="export">↓ 导出测试 JSON</button><span class="mini" id="stageNotice">请先单击地图确定特效中心；搜索仅用于导航</span></div>
+<div class="map-actions"><button class="btn primary" id="play" disabled>▶ 播放 28 秒云团与扩散波纹</button><button class="btn" id="save">＋ 记录本次测试</button><button class="btn" id="export">↓ 导出测试 JSON</button><span class="mini" id="stageNotice">请先单击地图确定特效中心；搜索仅用于导航</span></div>
 <div class="map-actions metrics"><div class="metric">当前帧率 <b id="fps">—</b></div><div class="metric">地图首帧 <b id="firstFrame">—</b></div><div class="metric">资源请求计数 <b id="requests">—</b></div><div class="metric">场景状态 <b id="ready" style="font-size:13px">未验证</b></div></div>
 </div>
 </section>
@@ -110,7 +110,7 @@ label{display:block;font-size:11px;color:#b5c8da;font-weight:700;margin:12px 0 5
 "use strict";
 var $=function(id){return document.getElementById(id);};
 var places={nyc:{name:"纽约 · 曼哈顿",lat:40.7484,lon:-73.9857},paris:{name:"巴黎 · 市中心",lat:48.8584,lon:2.2945},tokyo:{name:"东京 · 市中心",lat:35.6812,lon:139.7671},rural:{name:"法国 · 乡村",lat:46.481,lon:3.112}};
-var s={mode:"A",display:"A",src:"esri",token:"",viewer:null,tileset:null,lat:places.nyc.lat,lon:places.nyc.lon,place:places.nyc.name,point:null,records:[],fps:0,frames:[],firstFrame:null,startTime:performance.now(),switchedAt:performance.now(),lastGeocode:0,requestBaseline:0,ready:false,animation:null};
+var s={mode:"A",display:"A",src:"esri",token:"",viewer:null,tileset:null,lat:places.nyc.lat,lon:places.nyc.lon,place:places.nyc.name,point:null,records:[],fps:0,frames:[],firstFrame:null,startTime:performance.now(),switchedAt:performance.now(),lastGeocode:0,requestBaseline:0,ready:false,animation:null,linger:null,phase:"idle",lastLingerDraw:0};
 var pnum=function(n){return Number(n).toLocaleString("zh-CN");};
 var money=function(n){return "$"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});};
 var status=function(t,isError){$("mapStatus").textContent=t;$("ready").textContent=isError?"错误":t.indexOf("已")>=0?"已显示":"加载中";};
@@ -122,9 +122,25 @@ var C=window.Cesium,h=view()==="top"?9500:view()==="close"?1700:7300;
 var pitch=view()==="top"?-90:view()==="close"?-32:-61;
 s.viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(s.lon,s.lat,h),orientation:{heading:0,pitch:C.Math.toRadians(pitch),roll:0},duration:1.5});
 };
-var setPlace=function(x){s.lat=x.lat;s.lon=x.lon;s.place=x.name;$("placeLabel").textContent=s.place;clearPoint();fly();$("searchStatus").textContent="已导航到附近；请鼠标单击地图选择准确位置。";};
-var clearPoint=function(){s.point=null;if(s.viewer)s.viewer.entities.removeAll();$("coords").textContent="尚未点击地图选定特效中心";$("play").disabled=true;$("selectionHint").textContent="搜索只导航相机。请在地图上单击，选择特效中心。";};
-var drawMarkers=function(){if(!s.viewer)return;try{s.viewer.entities.removeAll();if(!s.point)return;s.viewer.entities.add({position:Cesium.Cartesian3.fromDegrees(s.point.lon,s.point.lat,s.point.height||55),point:{pixelSize:13,color:Cesium.Color.fromCssColorString("#ff923e"),outlineColor:Cesium.Color.WHITE,outlineWidth:3,disableDepthTestDistance:Number.POSITIVE_INFINITY},label:{text:"动画中心",font:"bold 13px sans-serif",pixelOffset:new Cesium.Cartesian2(0,-27),fillColor:Cesium.Color.WHITE,showBackground:true,backgroundColor:new Cesium.Color(.07,.12,.19,.8),disableDepthTestDistance:Number.POSITIVE_INFINITY}});}catch(e){console.warn("marker",e);}};
+var setPlace=function(x){s.lat=x.lat;s.lon=x.lon;s.place=x.name;$("placeLabel").textContent=s.place;fly();$("searchStatus").textContent="已导航到附近；请单击地图选择具体位置。";};
+var clearPoint=function(){
+if(s.phase==="playing")return;
+s.point=null;s.phase="idle";
+if(s.viewer)s.viewer.entities.removeAll();
+$("coords").textContent="尚未点击地图选点";$("play").disabled=true;
+$("selectionHint").textContent="搜索只移动镜头，鼠标单击才选点。";
+};
+var drawMarkers=function(){
+if(!s.viewer)return;
+try{
+s.viewer.entities.removeAll();
+if(!s.point)return;
+s.viewer.entities.add({
+position:Cesium.Cartesian3.fromDegrees(s.point.lon,s.point.lat,s.point.height||55),
+point:{pixelSize:12,color:Cesium.Color.fromCssColorString("#ff923e"),outlineColor:Cesium.Color.WHITE,outlineWidth:2,disableDepthTestDistance:Number.POSITIVE_INFINITY}
+});
+}catch(e){console.warn("marker",e);}
+};
 var geocode=async function(q){
 if(!q.trim())return;var now=Date.now();
 if(now-s.lastGeocode<1100){$("searchStatus").textContent="请至少间隔 1 秒再搜索。";return;}
@@ -147,6 +163,7 @@ s.viewer.scene.globe.depthTestAgainstTerrain=false;
 s.viewer.scene.fog.enabled=false;
 var clickHandler=new C.ScreenSpaceEventHandler(s.viewer.scene.canvas);
 clickHandler.setInputAction(function(movement){
+if(s.phase==="playing"){$("stageNotice").textContent="播放期间位置已锁定；动画结束才能重新选点";return;}
 var scene=s.viewer.scene,pos=null;
 try{if(scene.pickPositionSupported)pos=scene.pickPosition(movement.position);}catch(e){}
 try{if(!C.defined(pos)&&scene.globe&&scene.globe.show){var ray=s.viewer.camera.getPickRay(movement.position);pos=scene.globe.pick(ray,scene);}}catch(e){}
@@ -156,17 +173,20 @@ try{
 var geo=C.Cartographic.fromCartesian(pos);
 var lat=C.Math.toDegrees(geo.latitude),lon=C.Math.toDegrees(geo.longitude);
 if(!Number.isFinite(lat)||!Number.isFinite(lon))throw Error("无效坐标");
+s.linger=null;s.animation=null;s.phase="selected";
+if(typeof fxCtx!=="undefined"&&fxCtx){fitCanvas();fxCtx.clearRect(0,0,fxW,fxH);}
 s.point={lat:lat,lon:lon,height:Math.max(30,Number(geo.height)||0)};
-drawMarkers();$("coords").textContent="动画中心："+lat.toFixed(5)+"°, "+lon.toFixed(5)+"°";
-$("play").disabled=false;$("selectionHint").textContent="已通过地图点击选定中心。搜索和切换地图不会代替你的鼠标选择。";
-$("stageNotice").textContent="已选点 · 按「播放」查看慢速可视化";
-status("已选中地图位置；可播放 18 秒非物理视觉动画",false);
+drawMarkers();$("coords").textContent="已选坐标："+lat.toFixed(5)+"°, "+lon.toFixed(5)+"°";
+$("play").disabled=false;$("selectionHint").textContent="选点完成。播放后锁定 28 秒，结束后才可再选点。";
+$("stageNotice").textContent="选点已确定 · 点击播放后锁定位置";
+status("选点完成：可播放 28 秒缓慢云团动画",false);
 }catch(err){status("无法解析点位："+err.message,true);}
 },C.ScreenSpaceEventType.LEFT_CLICK);
 s.viewer.scene.postRender.addEventListener(function(){
 if(s.firstFrame===null){s.firstFrame=performance.now()-s.startTime;$("firstFrame").textContent=Math.round(s.firstFrame)+"ms";}
 var t=performance.now();s.frames.push(t);while(s.frames.length && t-s.frames[0]>3000)s.frames.shift();
 if(s.frames.length>3)s.fps=(s.frames.length-1)*1000/(t-s.frames[0]);
+if(s.linger&&!s.animation&&t-s.lastLingerDraw>100){s.lastLingerDraw=t;paintFx(s.linger.anchor,1);}
 
 });
 setInterval(function(){if(s.viewer){$("fps").textContent=isFinite(s.fps)&&s.fps>0?s.fps.toFixed(1):"—";$("requests").textContent=pnum(stats().length);}},1000);
@@ -250,20 +270,24 @@ g.addColorStop(.22,"rgba(255,152,65,"+(.36*alpha)+")");
 g.addColorStop(1,"rgba(255,115,62,0)");
 ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
 };
+/* Reusable cloud textures: screen-space artistic layers, not physical modeling. */
+var puffTextures={};
+var smokeTexture=function(tone){
+if(puffTextures[tone])return puffTextures[tone];
+var c=document.createElement("canvas");c.width=128;c.height=128;
+var g=c.getContext("2d"),grad=g.createRadialGradient(50,43,4,64,64,63);
+var palette=tone==="light"?
+["rgba(247,237,217,.99)","rgba(207,198,183,.92)","rgba(129,130,134,.74)","rgba(65,75,90,.25)"]:
+tone==="warm"?
+["rgba(248,192,137,.96)","rgba(193,145,122,.89)","rgba(118,103,104,.67)","rgba(63,68,79,.25)"]:
+["rgba(193,184,174,.96)","rgba(155,151,148,.91)","rgba(90,96,105,.74)","rgba(46,54,68,.25)"];
+[0,.28,.65,.89].forEach(function(k,i){grad.addColorStop(k,palette[i]);});
+grad.addColorStop(1,"rgba(40,45,56,0)");
+g.fillStyle=grad;g.fillRect(0,0,128,128);return puffTextures[tone]=c;
+};
 var smokePuff=function(ctx,x,y,rx,ry,a,tone){
-ctx.save();ctx.translate(x,y);ctx.scale(rx,ry);
-var grad=ctx.createRadialGradient(-.24,-.27,.05,0,0,1);
-if(tone==="light"){
-grad.addColorStop(0,"rgba(245,238,221,"+(.83*a)+")");
-grad.addColorStop(.48,"rgba(190,190,184,"+(.8*a)+")");
-grad.addColorStop(.8,"rgba(91,96,107,"+(.65*a)+")");
-}else{
-grad.addColorStop(0,"rgba(187,177,165,"+(.78*a)+")");
-grad.addColorStop(.5,"rgba(117,120,126,"+(.8*a)+")");
-grad.addColorStop(.85,"rgba(53,64,78,"+(.64*a)+")");
-}
-grad.addColorStop(1,"rgba(43,48,62,0)");
-ctx.fillStyle=grad;ctx.beginPath();ctx.arc(0,0,1,0,Math.PI*2);ctx.fill();ctx.restore();
+ctx.save();ctx.globalAlpha*=a;ctx.translate(x,y);ctx.scale(rx,ry);
+ctx.drawImage(smokeTexture(tone||"dark"),-1,-1,2,2);ctx.restore();
 };
 var drawRing=function(ctx,x,y,age,delay,maxRadius,flatten){
 var q=clamp((age-delay)/(.74-delay));if(q<=0||q>=1)return;
@@ -280,59 +304,85 @@ ctx.shadowColor="rgba(255,131,56,"+(.65*opacity)+")";ctx.shadowBlur=15;ctx.begin
 ctx.restore();
 };
 var drawCloud=function(ctx,x,y,age,w,h){
-var growth=smooth((age-.035)/.76);if(growth<=0)return;
-var wFinal=Math.min(690,w*.91),hFinal=Math.min(430,h*.84);
-var width=wFinal*(.12+.88*growth),height=hFinal*(.08+.92*growth), capY=y-height*.79;
-var fade=1-smooth((age-.83)/.17)*.96;
-ctx.save();ctx.globalAlpha=fade;
-for(var i=0;i<15;i++){
-var k=i/14,spread=(.075+.11*k)*width;
-var px=x+(rand(i+24)-.5)*spread*2+Math.sin(age*7+i)*3;
-var py=y-height*(.08+k*.66);
-var rr=(.038+.048*k)*width;
-smokePuff(ctx,px,py,rr,rr*(1.0+rand(i+40)*.4),.70,"dark");
+/* Stylized plume. All sizes are viewport-relative, not real-world radii. */
+var growth=smooth((age-.01)/.79);if(growth<=0)return;
+var width=Math.min(780,w*.95)*(.1+.9*growth);
+var height=Math.min(450,h*.90)*(.07+.93*growth),capY=y-height*.79;
+ctx.save();
+var base=smooth((age-.02)/.24);
+for(var g=0;g<28;g++){
+var gx=x+(rand(g+910)-.5)*width*(.9+.6*base),gy=y+height*(.02+.1*rand(g+920));
+var rr=width*(.045+.042*rand(g+930))*base;
+smokePuff(ctx,gx,gy,rr*1.65,rr*.6,.35+.25*base,g%5===0?"warm":"dark");
 }
-for(var j=0;j<37;j++){
-var a=(j/37)*Math.PI*2, rr=Math.sqrt(rand(j+91));
-var xx=x+Math.cos(a)*rr*width*.46, yy=capY+Math.sin(a)*rr*height*.15;
-var r0=(.062+.035*rand(j+3))*width;
-smokePuff(ctx,xx,yy,r0,r0*(.78+.35*rand(j+18)),.72,j%4===0?"light":"dark");
+for(var i=0;i<32;i++){
+var k=i/31,spread=(.045+.115*k)*width;
+var px=x+(rand(i+24)-.5)*spread*2+Math.sin(age*2+i*.4)*width*.004;
+var py=y-height*(.07+k*.69),r0=(.033+.038*k)*width;
+smokePuff(ctx,px,py,r0,r0*(1+rand(i+40)*.4),.71,i%6===0?"warm":"dark");
 }
-for(var m=0;m<19;m++){
-var angle=(m/19)*Math.PI*2;
-var rimX=x+Math.cos(angle)*width*.42, rimY=capY+Math.sin(angle)*height*.145;
-smokePuff(ctx,rimX,rimY,width*(.052+.027*rand(m+300)),height*(.062+.028*rand(m+310)),.81,m%3===0?"light":"dark");
+for(var j=0;j<88;j++){
+var a=rand(j+208)*Math.PI*2,r=Math.sqrt(rand(j+91));
+var xx=x+Math.cos(a)*r*width*.445,yy=capY+Math.sin(a)*r*height*.155;
+var sz=(.038+.038*rand(j+3))*width;
+smokePuff(ctx,xx,yy,sz,sz*(.75+.36*rand(j+18)),.75,j%7===0?"light":j%11===0?"warm":"dark");
 }
-smokePuff(ctx,x,capY-height*.018,width*.38,height*.145,.38,"light");
+for(var m=0;m<41;m++){
+var a2=m/41*Math.PI*2;
+var rimX=x+Math.cos(a2)*width*.43,rimY=capY+Math.sin(a2)*height*.16;
+smokePuff(ctx,rimX,rimY,width*(.04+.02*rand(m+300)),height*(.058+.03*rand(m+310)),.82,m%4===0?"light":"dark");
+}
+for(var n=0;n<18;n++){
+var hx=x+(rand(n+510)-.5)*width*.66,hy=capY-height*(.01+.11*rand(n+511));
+smokePuff(ctx,hx,hy,width*(.03+.024*rand(n+512)),height*(.024+.021*rand(n+513)),.39,n%2===0?"light":"warm");
+}
+smokePuff(ctx,x,capY-height*.012,width*.34,height*.125,.29,"light");
 ctx.restore();
 };
-var fxRender=function(now){
-if(!s.animation)return;
-if(now-fxLastDraw<30){fxRAF=requestAnimationFrame(fxRender);return;}
-fxLastDraw=now;fitCanvas();
-var ctx=fxCtx,t=clamp((now-s.animation.start)/s.animation.duration);
-ctx.clearRect(0,0,fxW,fxH);
+/* Anchor is copied only on Play and is immutable throughout playback. */
+var paintFx=function(anchor,t){
+if(!anchor)return;
+fitCanvas();var ctx=fxCtx;ctx.clearRect(0,0,fxW,fxH);
 var xy=null;
-if(s.viewer&&s.point){try{xy=Cesium.SceneTransforms.worldToWindowCoordinates(s.viewer.scene,Cesium.Cartesian3.fromDegrees(s.point.lon,s.point.lat,s.point.height||60));}catch(e){}}
-if(!xy)xy=s.animation.initialXY;
-if(xy){
+if(s.viewer){try{
+xy=Cesium.SceneTransforms.worldToWindowCoordinates(s.viewer.scene,Cesium.Cartesian3.fromDegrees(anchor.lon,anchor.lat,anchor.height||60));
+}catch(e){}}
+if(!xy||!Number.isFinite(xy.x)||!Number.isFinite(xy.y))return;
+if(xy.x< -fxW||xy.x>fxW*2||xy.y< -fxH||xy.y>fxH*2)return;
 var x=xy.x,y=xy.y,reference=Math.max(fxW,fxH);
-glow(ctx,x,y,Math.min(reference*.31,270)*(1+smooth(t/.3)*.7),1-smooth(t/.20));
-drawRing(ctx,x,y,t,.045,reference*.84,view()==="top"?.66:.42);
-drawRing(ctx,x,y,t,.16,reference*.67,view()==="top"?.70:.45);
-drawRing(ctx,x,y,t,.32,reference*.51,view()==="top"?.74:.49);
+glow(ctx,x,y,Math.min(reference*.31,270)*(1+smooth(t/.3)*.7),1-smooth(t/.24));
+drawRing(ctx,x,y,t,.035,reference*.88,view()==="top"?.67:.43);
+drawRing(ctx,x,y,t,.14,reference*.7,view()==="top"?.71:.46);
+drawRing(ctx,x,y,t,.28,reference*.53,view()==="top"?.75:.49);
 drawCloud(ctx,x,y,t,fxW,fxH);
-}
+};
+var fxRender=function(now){
+if(!s.animation||s.phase!=="playing")return;
+if(now-fxLastDraw<30){fxRAF=requestAnimationFrame(fxRender);return;}
+fxLastDraw=now;var a=s.animation,t=clamp((now-a.start)/a.duration);
+paintFx(a.anchor,t);
 if(t<1){fxRAF=requestAnimationFrame(fxRender);}
-else{s.animation=null;$("stageNotice").textContent="已播放完成；可再次播放或点击地图重新选点";ctx.clearRect(0,0,fxW,fxH);}
+else{
+s.linger={anchor:a.anchor};s.animation=null;s.phase="finished";s.point=null;
+$("play").disabled=true;
+$("stageNotice").textContent="播放完成：云团停留原处。单击地图选新点后可再次播放。";
+$("selectionHint").textContent="云团已保留。单击地图重新选点，才会清除旧画面。";
+$("coords").textContent="等待新选点";
+if(s.viewer)s.viewer.entities.removeAll();
+paintFx(s.linger.anchor,1);
+}
 };
 var playFx=function(){
-if(!s.point){$("stageNotice").textContent="请先鼠标单击地图选点；搜索本身不会选点。";return;}
-cancelAnimationFrame(fxRAF);
-var pixel=null;try{pixel=Cesium.SceneTransforms.worldToWindowCoordinates(s.viewer.scene,Cesium.Cartesian3.fromDegrees(s.point.lon,s.point.lat,s.point.height||60));}catch(e){}
-s.animation={start:performance.now(),duration:18000,initialXY:pixel};
-fxLastDraw=0;$("stageNotice").textContent="慢速演示进行中（18 秒）：可放大、旋转、移动镜头";
-fxRAF=requestAnimationFrame(fxRender);
+if(s.phase!=="selected"||!s.point||s.animation){
+$("stageNotice").textContent="请先单击地图选点；播放期间不能切换位置。";return;
+}
+cancelAnimationFrame(fxRAF);s.linger=null;
+var anchor=Object.freeze({lat:s.point.lat,lon:s.point.lon,height:s.point.height});
+s.animation={start:performance.now(),duration:28000,anchor:anchor};
+s.phase="playing";$("play").disabled=true;
+$("stageNotice").textContent="28 秒慢速云团动画播放中：位置已锁定";
+$("selectionHint").textContent="播放期间鼠标点击不会改变动画位置；地图仍可拖动、缩放。";
+fxLastDraw=0;fxRAF=requestAnimationFrame(fxRender);
 };
 var capture=function(){
 var item={time:new Date().toISOString(),requestedMode:s.mode,visibleSource:s.display,source:s.display==="A"?$("imagery").value:"Google 3D Tiles via Cesium ion",location:s.place,search_latitude:s.lat,search_longitude:s.lon,selected_latitude:s.point?s.point.lat:null,selected_longitude:s.point?s.point.lon:null,view:view(),fps_sample:s.viewer&&s.fps>0?Number(s.fps.toFixed(1)):null,first_frame_ms:s.viewer?s.firstFrame:null,resource_entries_since_mode_change:stats().length-s.requestBaseline,resource_entries_total:stats().length,model_loaded:!!(s.tileset&&s.tileset.show),is_actual_billing:false,note:"Browser Performance API counts are NOT provider billing events. Load completion not scientifically verified."};
