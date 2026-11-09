@@ -19,6 +19,14 @@ label{display:block;font-size:11px;color:#b5c8da;font-weight:700;margin:12px 0 5
 .section{margin:35px 0}.sub{font-size:13px;margin-bottom:20px}.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.path{padding:21px;min-height:205px}.path .letter{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid #435775;border-radius:11px;font-weight:800;color:var(--cyan);font-size:21px;margin-bottom:16px}.path.b .letter{color:var(--orange)}.path.c .letter{color:#99aaff}.path p{font-size:12px}.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{background:#101925;border:1px solid var(--line);border-radius:11px;padding:17px}.stat .v{font-size:24px;font-weight:800;margin:6px 0}.stat small{color:#8da0b5}.panel-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:13px}.reporttable{width:100%;border-collapse:collapse;font-size:12px}.reporttable th,.reporttable td{text-align:left;border-bottom:1px solid #29394f;padding:11px 8px;vertical-align:top}.reporttable th{font-size:11px;color:#93a9c2}.tag{border:1px solid #42566d;border-radius:6px;padding:3px 7px;font-size:10px;white-space:nowrap;color:#cde0f7}.tag.ok{color:#74e3b5;border-color:#356c60}.tag.warn{color:#f3c886;border-color:#80694a}.tag.dim{color:#a5b8ca}.scroll{max-height:280px;overflow:auto}.sum{font-size:28px;font-weight:850}.costgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}.costbox{background:#101a29;border:1px solid #2e4057;border-radius:11px;padding:16px}.costbox small{color:#a8bdce;font-size:11px}.costbox strong{display:block;font-size:23px;margin-top:4px}.costbox.active{border-color:#447a78}.inline-number{display:flex;justify-content:space-between}.inline-number strong{color:white}.ref{font-size:12px;color:#b4c2d4;padding:4px 0}.ref a{word-break:break-all}.fineprint{font-size:11px;color:#8d9fb3;border-top:1px solid var(--line);padding-top:14px;margin-top:16px}.footer{border-top:1px solid var(--line);padding:25px 0 45px;color:#8599af;font-size:11px}.testempty{padding:30px 10px;color:#839ab2;font-size:12px;text-align:center}.ce{color:var(--cyan)}.or{color:var(--orange)}
 @media(max-width:920px){.layout,.panel-grid{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr}.mapstage{height:450px}.nav{display:none}}
 @media(max-width:650px){.wrap{width:calc(100% - 22px)}.hero{padding:24px 0 12px}.side,.three,.costgrid{grid-template-columns:1fr}.stats-grid{grid-template-columns:1fr 1fr}.mapstage{height:410px}.mapcard{min-height:0}.map-actions .btn{flex:1}.modes{width:100%}.mode{flex:1}.panel-grid{grid-template-columns:1fr}.toolbar{align-items:start}.map-bottom{flex-wrap:wrap}.path{min-height:0}}
+
+/* Full-stage presentation effect: screen-space only, no geographic/risk radius */
+#effectCanvas{position:absolute;inset:0;z-index:7;width:100%;height:100%;pointer-events:none}
+#cesiumContainer canvas{cursor:crosshair}
+#play:disabled{opacity:.48;cursor:not-allowed}
+#selectionHint{color:#9ce9d5;font-weight:700}
+.selected-note{background:#113130;border:1px solid #28625b;border-radius:8px;padding:10px;margin-top:10px;font-size:11px;color:#b3f1e3}
+@media (prefers-reduced-motion:reduce){#effectCanvas{opacity:.85}}
 </style>
 <script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.137.0/Build/Cesium/";</script>
 <script defer src="https://cdn.jsdelivr.net/npm/cesium@1.137.0/Build/Cesium/Cesium.js"></script>
@@ -29,19 +37,19 @@ label{display:block;font-size:11px;color:#b5c8da;font-weight:700;margin:12px 0 5
 <section class="hero"><div class="eyebrow">ENGINEERING FEASIBILITY / 2026-11-09</div><h1>先验证体验，<br><span class="ce">再决定技术。</span></h1><p class="lead">三条地图数据路线，一套交互体验。只研究现成影像、摄影测量 3D 数据与抽象视觉动画的集成可行性；不自建地球和建筑，不以技术复杂度为目标。</p><div class="statusline"><span class="chip">✓ 官方价格与接入文档已核实</span><span class="chip">◌ 地图加载需要用户浏览器联网</span><span class="chip">◌ Google 3D 需授权 Cesium ion Token</span><span class="chip">◌ 实机 FPS / 账单未完成</span></div></section>
 <section id="lab" class="layout">
 <div class="side">
-<div class="card pad"><h3>① 搜索与定位</h3><form id="searchForm"><label for="address">全球地点 / 具体地址</label><div class="row"><input id="address" type="text" placeholder="Paris, France" autocomplete="off" aria-label="搜索地址"><button class="btn primary" type="submit">搜索</button></div></form><div class="presets"><button class="btn small preset" data-id="nyc">纽约 · 曼哈顿</button><button class="btn small preset" data-id="paris">法国 · 巴黎</button><button class="btn small preset" data-id="tokyo">日本 · 东京</button><button class="btn small preset" data-id="rural">乡村 · 低覆盖</button></div><div class="help">地址搜索临时使用 OSM Nominatim 公共 API（仅少量手动测试，不自动补全）。<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener">使用政策</a></div><div id="searchStatus" class="help" aria-live="polite"></div></div>
-<div class="card pad"><h3>② 地图数据源</h3><label for="imagery">A · 卫星影像</label><select id="imagery"><option value="esri">Esri World Imagery（无需 Token 的预研）</option><option value="ion">Cesium World Imagery（需自己的 Token）</option></select><label for="token">Cesium ion 临时访问 Token（可选）</label><input id="token" type="password" placeholder="只用于当前页面内存，不上传本站" autocomplete="off"><div class="row" style="margin-top:9px"><button class="btn small" id="applyToken">应用 Token</button><button class="btn small" id="clearToken">清除</button></div><p class="help">B 使用你已确认的 ion Google 3D Tiles 资产 ID 2275207。Token 不写入仓库、不存储到 LocalStorage；第三方地图请求仍会携带凭证，请对 Token 设置访问域名与最小权限。</p></div>
+<div class="card pad"><h3>① 搜索与定位</h3><form id="searchForm"><label for="address">全球地点 / 具体地址</label><div class="row"><input id="address" type="text" placeholder="Paris, France" autocomplete="off" aria-label="搜索地址"><button class="btn primary" type="submit">搜索</button></div></form><div class="presets"><button class="btn small preset" data-id="nyc">纽约 · 曼哈顿</button><button class="btn small preset" data-id="paris">法国 · 巴黎</button><button class="btn small preset" data-id="tokyo">日本 · 东京</button><button class="btn small preset" data-id="rural">乡村 · 低覆盖</button></div><div class="selected-note" id="selectionHint">操作顺序：① 搜索城市 → ② 鼠标单击地图选点 → ③ 播放慢速动画。搜索不会确定动画中心。</div><div class="help">地址搜索临时使用 OSM Nominatim 公共 API（仅少量手动测试，不自动补全）。<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener">使用政策</a></div><div id="searchStatus" class="help" aria-live="polite"></div></div>
+<div class="card pad"><h3>② 地图数据源</h3><label for="imagery">A · 卫星影像</label><select id="imagery"><option value="esri">Esri World Imagery（无需 Token 的预研）</option><option value="ion">Cesium World Imagery（需自己的 Token）</option></select><label for="token">Cesium ion 临时访问 Token（可选）</label><input id="token" type="password" placeholder="只用于当前页面内存，不上传本站" autocomplete="off"><div class="row" style="margin-top:9px"><button class="btn small" id="applyToken">应用 Token</button><button class="btn small" id="clearToken">清除</button></div><p class="help">接入 B：登录 <a href="https://ion.cesium.com/tokens" target="_blank" rel="noopener">Cesium ion → Access Tokens</a>，新建仅有 assets:read 权限的专用 Token，授权访问 Google Photorealistic 3D Tiles，Allowed URLs 设置为 https://geo-experience-lab.vercel.app；粘贴此处并单击「应用 Token」，再点击 B。Token 不写入仓库和 LocalStorage；第三方 Cesium 请求仍会携带它。</p></div>
 <div class="card pad"><h3>③ 测试条件</h3><label for="view">地图相机</label><select id="view"><option value="aerial">鸟瞰 · 45°</option><option value="top">正俯视 · 90°</option><option value="close">近景 · 低角度</option></select><div class="notice" style="margin-top:12px">本页的光雾动画仅用于验证图层对齐与视觉交互，不模拟实际物理过程、影响范围或损害。</div></div>
 </div>
 <div class="card mapcard">
 <div class="toolbar"><div class="modes"><button id="modeA" class="mode active">A · 卫星影像</button><button id="modeB" class="mode b">B · 真实 3D</button><button id="modeC" class="mode c">C · 混合模式</button></div><div id="cToggle" class="row" style="display:none"><button id="c2d" class="btn small accent">2D 影像</button><button id="c3d" class="btn small">3D 城市</button></div></div>
 <div class="mapstage" id="mapStage">
 <div class="earthfallback" id="fallback"><div class="sphere"></div><strong>正在加载全球地图引擎</strong><small>如果地图资源被当前网络屏蔽，页面其余的方案比较和成本工具仍可使用。</small></div>
-<div id="cesiumContainer"></div><div class="fx" id="fx"></div>
-<div class="map-hud"><div><strong id="liveMode">A / 卫星影像</strong> · <span id="placeLabel">曼哈顿，纽约</span></div><div id="mapStatus" style="margin-top:4px">等待 Cesium 初始化…</div></div>
-<div class="map-bottom"><div class="overlay-right" id="coords">40.7484° N · 73.9857° W</div><div class="overlay-right">影像和模型版权归各数据提供方 · 仅限预研</div></div>
+<div id="cesiumContainer"></div><canvas id="effectCanvas" aria-hidden="true"></canvas>
+<div class="map-hud"><div><strong id="liveMode">A / 卫星影像</strong> · 浏览地区：<span id="placeLabel">曼哈顿，纽约</span></div><div id="mapStatus" style="margin-top:4px">等待 Cesium 初始化…</div></div>
+<div class="map-bottom"><div class="overlay-right" id="coords">尚未点击地图选定特效中心</div><div class="overlay-right">影像和模型版权归各数据提供方 · 仅限预研</div></div>
 </div>
-<div class="map-actions"><button class="btn primary" id="play">▶ 光雾动画示意</button><button class="btn" id="save">＋ 记录本次测试</button><button class="btn" id="export">↓ 导出测试 JSON</button><span class="mini" id="stageNotice">非物理演示</span></div>
+<div class="map-actions"><button class="btn primary" id="play" disabled>▶ 播放 18 秒云团与扩散波纹</button><button class="btn" id="save">＋ 记录本次测试</button><button class="btn" id="export">↓ 导出测试 JSON</button><span class="mini" id="stageNotice">请先单击地图确定特效中心；搜索仅用于导航</span></div>
 <div class="map-actions metrics"><div class="metric">当前帧率 <b id="fps">—</b></div><div class="metric">地图首帧 <b id="firstFrame">—</b></div><div class="metric">资源请求计数 <b id="requests">—</b></div><div class="metric">场景状态 <b id="ready" style="font-size:13px">未验证</b></div></div>
 </div>
 </section>
@@ -102,7 +110,7 @@ label{display:block;font-size:11px;color:#b5c8da;font-weight:700;margin:12px 0 5
 "use strict";
 var $=function(id){return document.getElementById(id);};
 var places={nyc:{name:"纽约 · 曼哈顿",lat:40.7484,lon:-73.9857},paris:{name:"巴黎 · 市中心",lat:48.8584,lon:2.2945},tokyo:{name:"东京 · 市中心",lat:35.6812,lon:139.7671},rural:{name:"法国 · 乡村",lat:46.481,lon:3.112}};
-var s={mode:"A",display:"A",src:"esri",token:"",viewer:null,tileset:null,lat:places.nyc.lat,lon:places.nyc.lon,place:places.nyc.name,records:[],fps:0,frames:[],firstFrame:null,startTime:performance.now(),switchedAt:performance.now(),lastGeocode:0,requestBaseline:0,ready:false};
+var s={mode:"A",display:"A",src:"esri",token:"",viewer:null,tileset:null,lat:places.nyc.lat,lon:places.nyc.lon,place:places.nyc.name,point:null,records:[],fps:0,frames:[],firstFrame:null,startTime:performance.now(),switchedAt:performance.now(),lastGeocode:0,requestBaseline:0,ready:false,animation:null};
 var pnum=function(n){return Number(n).toLocaleString("zh-CN");};
 var money=function(n){return "$"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});};
 var status=function(t,isError){$("mapStatus").textContent=t;$("ready").textContent=isError?"错误":t.indexOf("已")>=0?"已显示":"加载中";};
@@ -114,8 +122,9 @@ var C=window.Cesium,h=view()==="top"?9500:view()==="close"?1700:7300;
 var pitch=view()==="top"?-90:view()==="close"?-32:-61;
 s.viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(s.lon,s.lat,h),orientation:{heading:0,pitch:C.Math.toRadians(pitch),roll:0},duration:1.5});
 };
-var setPlace=function(x){s.lat=x.lat;s.lon=x.lon;s.place=x.name;$("placeLabel").textContent=s.place;$("coords").textContent=s.lat.toFixed(4)+"° / "+s.lon.toFixed(4)+"°";fly();};
-var drawMarkers=function(){if(!s.viewer)return;try{s.viewer.entities.removeAll();s.viewer.entities.add({position:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,60),point:{pixelSize:11,color:Cesium.Color.fromCssColorString("#ff9c61"),outlineColor:Cesium.Color.WHITE,outlineWidth:2,disableDepthTestDistance:Number.POSITIVE_INFINITY}});}catch(e){}};
+var setPlace=function(x){s.lat=x.lat;s.lon=x.lon;s.place=x.name;$("placeLabel").textContent=s.place;clearPoint();fly();$("searchStatus").textContent="已导航到附近；请鼠标单击地图选择准确位置。";};
+var clearPoint=function(){s.point=null;if(s.viewer)s.viewer.entities.removeAll();$("coords").textContent="尚未点击地图选定特效中心";$("play").disabled=true;$("selectionHint").textContent="搜索只导航相机。请在地图上单击，选择特效中心。";};
+var drawMarkers=function(){if(!s.viewer)return;try{s.viewer.entities.removeAll();if(!s.point)return;s.viewer.entities.add({position:Cesium.Cartesian3.fromDegrees(s.point.lon,s.point.lat,s.point.height||55),point:{pixelSize:13,color:Cesium.Color.fromCssColorString("#ff923e"),outlineColor:Cesium.Color.WHITE,outlineWidth:3,disableDepthTestDistance:Number.POSITIVE_INFINITY},label:{text:"动画中心",font:"bold 13px sans-serif",pixelOffset:new Cesium.Cartesian2(0,-27),fillColor:Cesium.Color.WHITE,showBackground:true,backgroundColor:new Cesium.Color(.07,.12,.19,.8),disableDepthTestDistance:Number.POSITIVE_INFINITY}});}catch(e){console.warn("marker",e);}};
 var geocode=async function(q){
 if(!q.trim())return;var now=Date.now();
 if(now-s.lastGeocode<1100){$("searchStatus").textContent="请至少间隔 1 秒再搜索。";return;}
@@ -126,7 +135,7 @@ var r=await fetch(url,{headers:{"Accept":"application/json"}});
 if(!r.ok)throw Error("HTTP "+r.status);
 var j=await r.json();if(!j.length)throw Error("未找到此地址，请换一个关键词");
 setPlace({name:j[0].display_name.split(",").slice(0,2).join("，"),lat:Number(j[0].lat),lon:Number(j[0].lon)});
-drawMarkers();$("searchStatus").textContent="已定位： "+s.place;
+$("searchStatus").textContent="地图已导航至："+s.place+"；请在地图单击准确位置。";
 }catch(e){$("searchStatus").textContent="查询失败："+e.message+"。可先使用预设城市。";}
 };
 var setupCesium=async function(){
@@ -136,11 +145,29 @@ var C=Cesium;
 s.viewer=new C.Viewer("cesiumContainer",{animation:false,timeline:false,geocoder:false,baseLayerPicker:false,baseLayer:false,homeButton:false,fullscreenButton:false,navigationHelpButton:false,infoBox:false,selectionIndicator:false,sceneModePicker:false,requestRenderMode:false,terrainProvider:new C.EllipsoidTerrainProvider(),scene3DOnly:true});
 s.viewer.scene.globe.depthTestAgainstTerrain=false;
 s.viewer.scene.fog.enabled=false;
+var clickHandler=new C.ScreenSpaceEventHandler(s.viewer.scene.canvas);
+clickHandler.setInputAction(function(movement){
+var scene=s.viewer.scene,pos=null;
+try{if(scene.pickPositionSupported)pos=scene.pickPosition(movement.position);}catch(e){}
+try{if(!C.defined(pos)&&scene.globe&&scene.globe.show){var ray=s.viewer.camera.getPickRay(movement.position);pos=scene.globe.pick(ray,scene);}}catch(e){}
+try{if(!C.defined(pos))pos=s.viewer.camera.pickEllipsoid(movement.position,C.Ellipsoid.WGS84);}catch(e){}
+if(!C.defined(pos)){status("未选中地表，请点击地图中的地面或建筑。",true);return;}
+try{
+var geo=C.Cartographic.fromCartesian(pos);
+var lat=C.Math.toDegrees(geo.latitude),lon=C.Math.toDegrees(geo.longitude);
+if(!Number.isFinite(lat)||!Number.isFinite(lon))throw Error("无效坐标");
+s.point={lat:lat,lon:lon,height:Math.max(30,Number(geo.height)||0)};
+drawMarkers();$("coords").textContent="动画中心："+lat.toFixed(5)+"°, "+lon.toFixed(5)+"°";
+$("play").disabled=false;$("selectionHint").textContent="已通过地图点击选定中心。搜索和切换地图不会代替你的鼠标选择。";
+$("stageNotice").textContent="已选点 · 按「播放」查看慢速可视化";
+status("已选中地图位置；可播放 18 秒非物理视觉动画",false);
+}catch(err){status("无法解析点位："+err.message,true);}
+},C.ScreenSpaceEventType.LEFT_CLICK);
 s.viewer.scene.postRender.addEventListener(function(){
 if(s.firstFrame===null){s.firstFrame=performance.now()-s.startTime;$("firstFrame").textContent=Math.round(s.firstFrame)+"ms";}
 var t=performance.now();s.frames.push(t);while(s.frames.length && t-s.frames[0]>3000)s.frames.shift();
 if(s.frames.length>3)s.fps=(s.frames.length-1)*1000/(t-s.frames[0]);
-if($("fx").classList.contains("on")){try{var xy=C.SceneTransforms.worldToWindowCoordinates(s.viewer.scene,C.Cartesian3.fromDegrees(s.lon,s.lat,200));if(xy){$("fx").style.left=xy.x+"px";$("fx").style.top=xy.y+"px";}}catch(e){}}
+
 });
 setInterval(function(){if(s.viewer){$("fps").textContent=isFinite(s.fps)&&s.fps>0?s.fps.toFixed(1):"—";$("requests").textContent=pnum(stats().length);}},1000);
 $("fallback").classList.add("loaded");
@@ -152,6 +179,7 @@ var loadA=async function(){
 if(!s.viewer)return false;
 try{
 var C=Cesium;
+if($("imagery").value==="ion"&&!s.token){status("Cesium World Imagery 需要自己的 ion Token；仍保留当前地图",true);return false;}
 s.viewer.scene.globe.show=true;
 if(s.tileset)s.tileset.show=false;
 s.viewer.imageryLayers.removeAll();
@@ -178,7 +206,7 @@ Cesium.Ion.defaultAccessToken=s.token;
 if(!s.tileset){
 status("正在获取授权 Google 3D Tiles…");
 try{s.tileset=await Cesium.createGooglePhotorealistic3DTileset();}
-catch(first){s.tileset=await Cesium.Cesium3DTileset.fromIonAssetId(2275207);}
+catch(first){console.warn("Google 3D tiles default route:",first);s.tileset=await Cesium.Cesium3DTileset.fromIonAssetId(2275207);}
 s.tileset.maximumScreenSpaceError=16;
 s.viewer.scene.primitives.add(s.tileset);
 }
@@ -187,7 +215,7 @@ s.viewer.scene.globe.show=false;
 s.display="B";$("liveMode").textContent="B / Google Photorealistic 3D Tiles";
 status("3D 数据源已连接；建筑瓦片仍需逐步加载",false);
 s.viewer.scene.requestRender();return true;
-}catch(e){status("3D 加载失败："+e.message,true);return false;}
+}catch(e){status("3D 加载失败："+e.message+"；核实 Token 的 assets:read、Google 3D 资产权限、Allowed URLs 与账户额度。",true);return false;}
 };
 var choose=async function(mode,within){
 s.mode=mode;
@@ -197,15 +225,117 @@ s.switchedAt=performance.now();s.requestBaseline=stats().length;
 var target=mode==="C"?(within||s.display):mode;
 if(mode==="C" && target!=="B")target="A";
 var ok=target==="A"?await loadA():await loadB();
-if(ok){fly();drawMarkers();}
+if(ok){drawMarkers();}
 $("c2d").classList.toggle("accent",s.display==="A");$("c3d").classList.toggle("accent",s.display==="B");
 };
+/* A large, deliberately slow, purely artistic viewport animation.
+   All sizes are fractions of the current browser canvas, not meters, map radii,
+   weapon yields, physical effects, or real-world hazard zones. */
+var fxCanvas=$("effectCanvas"),fxCtx=fxCanvas.getContext("2d");
+var fxW=0,fxH=0,fxRatio=1,fxRAF=0,fxLastDraw=0;
+var clamp=function(x){return Math.max(0,Math.min(1,x));};
+var smooth=function(t){t=clamp(t);return t*t*(3-2*t);};
+var ease=function(t){t=clamp(t);return 1-Math.pow(1-t,2.5);};
+var rand=function(n){var x=Math.sin(n*97.19+19.73)*43758.5453;return x-Math.floor(x);};
+var fitCanvas=function(){
+var rect=$("mapStage").getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
+var w=Math.max(1,Math.round(rect.width)),h=Math.max(1,Math.round(rect.height));
+if(w!==fxW||h!==fxH||dpr!==fxRatio){fxW=w;fxH=h;fxRatio=dpr;fxCanvas.width=Math.round(w*dpr);fxCanvas.height=Math.round(h*dpr);fxCanvas.style.width=w+"px";fxCanvas.style.height=h+"px";}
+fxCtx.setTransform(dpr,0,0,dpr,0,0);
+};
+var glow=function(ctx,x,y,r,alpha){
+var g=ctx.createRadialGradient(x,y,2,x,y,r);
+g.addColorStop(0,"rgba(255,244,205,"+(.48*alpha)+")");
+g.addColorStop(.22,"rgba(255,152,65,"+(.36*alpha)+")");
+g.addColorStop(1,"rgba(255,115,62,0)");
+ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+};
+var smokePuff=function(ctx,x,y,rx,ry,a,tone){
+ctx.save();ctx.translate(x,y);ctx.scale(rx,ry);
+var grad=ctx.createRadialGradient(-.24,-.27,.05,0,0,1);
+if(tone==="light"){
+grad.addColorStop(0,"rgba(245,238,221,"+(.83*a)+")");
+grad.addColorStop(.48,"rgba(190,190,184,"+(.8*a)+")");
+grad.addColorStop(.8,"rgba(91,96,107,"+(.65*a)+")");
+}else{
+grad.addColorStop(0,"rgba(187,177,165,"+(.78*a)+")");
+grad.addColorStop(.5,"rgba(117,120,126,"+(.8*a)+")");
+grad.addColorStop(.85,"rgba(53,64,78,"+(.64*a)+")");
+}
+grad.addColorStop(1,"rgba(43,48,62,0)");
+ctx.fillStyle=grad;ctx.beginPath();ctx.arc(0,0,1,0,Math.PI*2);ctx.fill();ctx.restore();
+};
+var drawRing=function(ctx,x,y,age,delay,maxRadius,flatten){
+var q=clamp((age-delay)/(.74-delay));if(q<=0||q>=1)return;
+var r=16+maxRadius*ease(q),opacity=Math.pow(1-q,.63)*.89;
+ctx.save();ctx.translate(x,y);ctx.scale(1,flatten);
+var g=ctx.createRadialGradient(0,0,Math.max(0,r-16),0,0,r+22);
+g.addColorStop(0,"rgba(255,135,76,0)");
+g.addColorStop(.43,"rgba(255,178,102,"+(.18*opacity)+")");
+g.addColorStop(.66,"rgba(255,220,167,"+(.34*opacity)+")");
+g.addColorStop(1,"rgba(255,133,69,0)");
+ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r+22,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle="rgba(255,216,158,"+(.86*opacity)+")";ctx.lineWidth=2.5+(1-q)*4;
+ctx.shadowColor="rgba(255,131,56,"+(.65*opacity)+")";ctx.shadowBlur=15;ctx.beginPath();ctx.ellipse(0,0,r,r,0,0,Math.PI*2);ctx.stroke();
+ctx.restore();
+};
+var drawCloud=function(ctx,x,y,age,w,h){
+var growth=smooth((age-.035)/.76);if(growth<=0)return;
+var wFinal=Math.min(690,w*.91),hFinal=Math.min(430,h*.84);
+var width=wFinal*(.12+.88*growth),height=hFinal*(.08+.92*growth), capY=y-height*.79;
+var fade=1-smooth((age-.83)/.17)*.96;
+ctx.save();ctx.globalAlpha=fade;
+for(var i=0;i<15;i++){
+var k=i/14,spread=(.075+.11*k)*width;
+var px=x+(rand(i+24)-.5)*spread*2+Math.sin(age*7+i)*3;
+var py=y-height*(.08+k*.66);
+var rr=(.038+.048*k)*width;
+smokePuff(ctx,px,py,rr,rr*(1.0+rand(i+40)*.4),.70,"dark");
+}
+for(var j=0;j<37;j++){
+var a=(j/37)*Math.PI*2, rr=Math.sqrt(rand(j+91));
+var xx=x+Math.cos(a)*rr*width*.46, yy=capY+Math.sin(a)*rr*height*.15;
+var r0=(.062+.035*rand(j+3))*width;
+smokePuff(ctx,xx,yy,r0,r0*(.78+.35*rand(j+18)),.72,j%4===0?"light":"dark");
+}
+for(var m=0;m<19;m++){
+var angle=(m/19)*Math.PI*2;
+var rimX=x+Math.cos(angle)*width*.42, rimY=capY+Math.sin(angle)*height*.145;
+smokePuff(ctx,rimX,rimY,width*(.052+.027*rand(m+300)),height*(.062+.028*rand(m+310)),.81,m%3===0?"light":"dark");
+}
+smokePuff(ctx,x,capY-height*.018,width*.38,height*.145,.38,"light");
+ctx.restore();
+};
+var fxRender=function(now){
+if(!s.animation)return;
+if(now-fxLastDraw<30){fxRAF=requestAnimationFrame(fxRender);return;}
+fxLastDraw=now;fitCanvas();
+var ctx=fxCtx,t=clamp((now-s.animation.start)/s.animation.duration);
+ctx.clearRect(0,0,fxW,fxH);
+var xy=null;
+if(s.viewer&&s.point){try{xy=Cesium.SceneTransforms.worldToWindowCoordinates(s.viewer.scene,Cesium.Cartesian3.fromDegrees(s.point.lon,s.point.lat,s.point.height||60));}catch(e){}}
+if(!xy)xy=s.animation.initialXY;
+if(xy){
+var x=xy.x,y=xy.y,reference=Math.max(fxW,fxH);
+glow(ctx,x,y,Math.min(reference*.31,270)*(1+smooth(t/.3)*.7),1-smooth(t/.20));
+drawRing(ctx,x,y,t,.045,reference*.84,view()==="top"?.66:.42);
+drawRing(ctx,x,y,t,.16,reference*.67,view()==="top"?.70:.45);
+drawRing(ctx,x,y,t,.32,reference*.51,view()==="top"?.74:.49);
+drawCloud(ctx,x,y,t,fxW,fxH);
+}
+if(t<1){fxRAF=requestAnimationFrame(fxRender);}
+else{s.animation=null;$("stageNotice").textContent="已播放完成；可再次播放或点击地图重新选点";ctx.clearRect(0,0,fxW,fxH);}
+};
 var playFx=function(){
-var f=$("fx");f.classList.remove("on");void f.offsetWidth;f.classList.add("on");$("stageNotice").textContent="正在播放抽象光雾效果，不代表实际物理结果";
-setTimeout(function(){f.classList.remove("on");$("stageNotice").textContent="非物理演示";},3900);
+if(!s.point){$("stageNotice").textContent="请先鼠标单击地图选点；搜索本身不会选点。";return;}
+cancelAnimationFrame(fxRAF);
+var pixel=null;try{pixel=Cesium.SceneTransforms.worldToWindowCoordinates(s.viewer.scene,Cesium.Cartesian3.fromDegrees(s.point.lon,s.point.lat,s.point.height||60));}catch(e){}
+s.animation={start:performance.now(),duration:18000,initialXY:pixel};
+fxLastDraw=0;$("stageNotice").textContent="慢速演示进行中（18 秒）：可放大、旋转、移动镜头";
+fxRAF=requestAnimationFrame(fxRender);
 };
 var capture=function(){
-var item={time:new Date().toISOString(),requestedMode:s.mode,visibleSource:s.display,source:s.display==="A"?$("imagery").value:"Google 3D Tiles via Cesium ion",location:s.place,latitude:s.lat,longitude:s.lon,view:view(),fps_sample:s.viewer&&s.fps>0?Number(s.fps.toFixed(1)):null,first_frame_ms:s.viewer?s.firstFrame:null,resource_entries_since_mode_change:stats().length-s.requestBaseline,resource_entries_total:stats().length,model_loaded:!!(s.tileset&&s.tileset.show),is_actual_billing:false,note:"Browser Performance API counts are NOT provider billing events. Load completion not scientifically verified."};
+var item={time:new Date().toISOString(),requestedMode:s.mode,visibleSource:s.display,source:s.display==="A"?$("imagery").value:"Google 3D Tiles via Cesium ion",location:s.place,search_latitude:s.lat,search_longitude:s.lon,selected_latitude:s.point?s.point.lat:null,selected_longitude:s.point?s.point.lon:null,view:view(),fps_sample:s.viewer&&s.fps>0?Number(s.fps.toFixed(1)):null,first_frame_ms:s.viewer?s.firstFrame:null,resource_entries_since_mode_change:stats().length-s.requestBaseline,resource_entries_total:stats().length,model_loaded:!!(s.tileset&&s.tileset.show),is_actual_billing:false,note:"Browser Performance API counts are NOT provider billing events. Load completion not scientifically verified."};
 s.records.unshift(item);renderRecords();$("stageNotice").textContent="已保存当前浏览器观测（非账单数据）";
 };
 var renderRecords=function(){
