@@ -63,8 +63,8 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px
    <div class="result"><span>A / 全球卫星影像</span><b id="aStatus">等待加载</b></div>
    <div class="result"><span>B / 摄影测量 3D Tiles</span><b id="bStatus">需 Cesium ion Token</b></div>
    <div class="result"><span>C / 地图模式切换</span><b id="cStatus">未测试</b></div>
-   <div class="field"><label for="token">可选：Cesium ion 临时 Token（仅在此浏览器内存使用，不上传到本站、不写入网址）</label><div class="search"><input type="password" id="token" autocomplete="off" spellcheck="false" placeholder="粘贴自己的只读、限定域名 Token"><button id="setToken" type="button">应用</button></div></div>
-   <p class="muted">B 使用 Google Photorealistic 3D Tiles（经 Cesium ion）。需要你的 Token 具备相应资产访问权限。不要把 Token 发送给他人；公开分享页不会保存它。使用者需要各自配置。</p>
+   <div class="field"><label for="token">可选：Cesium ion 临时 Token（仅在浏览器内存使用；请只在信任的部署域名输入）</label><div class="search"><input type="password" id="token" autocomplete="off" spellcheck="false" placeholder="粘贴自己的最小权限、限定域名 Token"><button id="setToken" type="button">应用</button></div></div>
+   <p class="muted">B 使用 Google Photorealistic 3D Tiles（经 Cesium ion）。需要你的 Token 具备相应资产访问权限。不要把 Token 发送给他人；公开分享页不会保存它。使用者需要各自配置；第三方静态网页代理不应接收高权限凭证。</p>
   </section>
   <section class="card"><h2>02 / 浏览器测试面板</h2>
    <div class="rows">
@@ -132,7 +132,7 @@ async function activate(layer){
  state.layer=layer;$("sceneMode").textContent=(state.mode==="C"?"C · 混合 / ":"")+(layer==="A"?"全球卫星影像":"摄影测量 3D Tiles");status("切换数据源："+layer+" …");
  try{
   if(layer==="A"){
-   if(state.tileset){v.scene.primitives.remove(state.tileset);state.tileset=null;}
+   if(state.tileset){state.tileset.show=false;}
    v.scene.globe.show=true;
    if(!v.imageryLayers.length){v.imageryLayers.add(C.ImageryLayer.fromWorldImagery({style:C.IonWorldImageryStyle.AERIAL}));}
    $("aStatus").textContent="数据源已接入，待人工复核画质";
@@ -143,7 +143,7 @@ async function activate(layer){
     if(state.switchStart!==start){return false;}
     state.tileset=v.scene.primitives.add(ts);
    }
-   v.scene.globe.show=false;$("bStatus").textContent="3D Tiles 已初始化，待人工复核画质";
+   state.tileset.show=true;v.scene.globe.show=false;$("bStatus").textContent="3D Tiles 已初始化，待人工复核画质";
   }
   firstRendered(start);fly();hideFallback();status(layer==="A"?"A 模式已切换，检查真实影像是否加载完成":"B 模式已切换，检查建筑贴图是否加载完成");
   return true;
@@ -196,11 +196,11 @@ function updateCost(){
   $("cost2d").textContent=usd(c2);$("cost3d").textContent=usd(c3);$("costTotal").textContent=usd(c2+c3);
   $("costNote").textContent="按 Google 官方阶梯价格计算；2D="+n2.toLocaleString()+" 次瓦片、3D="+n3.toLocaleString()+" 次根瓦片；不代表当前 Cesium ion 渠道的账单。";
  }else{
-  var plans=[{name:"Community",fee:0,sess:1000,root:1000},{name:"Commercial",fee:149,sess:5000,root:5000},{name:"Premium",fee:499,sess:10000,root:10000}];
-  var valid=plans.find(function(p){return visits<=p.sess&&n3<=p.root;});
-  $("cost2d").textContent=visits.toLocaleString()+" 会话";$("cost3d").textContent=n3.toLocaleString()+" 根瓦片";
-  $("costTotal").textContent=valid?usd(valid.fee)+"/月":"超配额 · 需询价";
-  $("costNote").textContent=valid?("仅表示 "+valid.name+" 个人套餐公开起价与配额相符；流量、授权和其他用量仍须复核。"):"公开个人套餐配额不足；不按超额倍数编造报价。公共商业网站的对外使用授权需另行核实。";
+  var allowance2d=1000,allowance3d=1000;
+  $("cost2d").textContent=visits.toLocaleString()+" 会话";
+  $("cost3d").textContent=n3.toLocaleString()+" 根瓦片";
+  $("costTotal").textContent="需按套餐询价";
+  $("costNote").textContent="Cesium ion 使用按产品/合同确定的会话、根瓦片等计量项。Community 免费额度可能不足以覆盖本情景；公开商业服务的价格及授权必须以账户控制台和供应商报价为准，不能直接用 Google 的按量报价推算。";
  }
 }
 async function measure(){
