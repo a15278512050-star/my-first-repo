@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1019">
+<title>Geo Experience Lab — 地图体验与成本技术验证</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.137.0/Build/Cesium/Widgets/widgets.css">
+<style>
+:root{color-scheme:dark;--bg:#0a0e16;--panel:#121a27;--panel2:#182233;--line:#293548;--ink:#eef3fc;--muted:#99a9bc;--orange:#ff753e;--cyan:#64e3ce;--blue:#86aaff}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse 75% 35% at 80% -10%,#20304a 0,transparent 80%),var(--bg);color:var(--ink);font:14px/1.6 Inter,"Segoe UI","Microsoft YaHei",Arial,sans-serif}a{color:#a8d9ff;text-decoration:none}a:hover{text-decoration:underline}
+.wrap{width:min(1320px,calc(100% - 36px));margin:auto}header{height:65px;border-bottom:1px solid var(--line);display:flex;align-items:center;background:#0b1119e8;position:sticky;top:0;z-index:50;backdrop-filter:blur(18px)}.top{display:flex;justify-content:space-between;align-items:center;width:100%;gap:15px}.brand{font-size:16px;font-weight:800;letter-spacing:.25px}.brand i{display:inline-block;width:12px;height:12px;background:var(--orange);border-radius:50%;box-shadow:0 0 22px #ff753e9e;margin-right:8px}.nav{display:flex;gap:22px;color:#c4cddd;font-size:12px}.pill{border:1px solid #43536d;border-radius:20px;padding:4px 10px;color:#b7c9df;font-size:11px}
+h1{font-size:clamp(28px,3.2vw,46px);line-height:1.13;margin:12px 0 16px;letter-spacing:-1.2px}h2{font-size:25px;letter-spacing:-.5px;margin:0 0 8px}h3{font-size:16px;margin:0 0 5px}p{color:var(--muted);margin:7px 0 13px}.eyebrow{font-size:11px;letter-spacing:2px;color:var(--cyan);font-weight:800}.lead{max-width:800px;font-size:15px}.hero{padding:37px 0 22px}.statusline{display:flex;flex-wrap:wrap;gap:9px;margin:17px 0}.chip{background:#152031;border:1px solid #2d3b50;border-radius:9px;font-size:11px;padding:5px 10px;color:#c6d4e4}
+.layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:15px}.card{background:linear-gradient(140deg,#151e2c,#101723);border:1px solid var(--line);border-radius:15px;overflow:hidden}.pad{padding:18px}.side{display:flex;flex-direction:column;gap:14px}.side h3{font-size:15px;margin-bottom:13px}
+label{display:block;font-size:11px;color:#b5c8da;font-weight:700;margin:12px 0 5px}input,select{width:100%;background:#0c1420;border:1px solid #35465d;color:#eef3fc;border-radius:9px;padding:11px;outline:none;min-height:40px}input:focus,select:focus{border-color:var(--cyan)}input[type=range]{padding:0;accent-color:var(--cyan);min-height:16px}input[type=password]{letter-spacing:1px}.row{display:flex;align-items:center;gap:8px}.row>*{min-width:0}.row input{flex:1}.btn{display:inline-flex;align-items:center;justify-content:center;border:1px solid #39506d;background:#213249;color:#ecf6ff;padding:10px 12px;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;transition:.2s}.btn:hover{background:#2c4765}.btn.primary{background:var(--orange);color:#15131a;border-color:var(--orange)}.btn.accent{background:#183b3b;border-color:#27655d;color:#84ecdd}.btn.small{font-size:11px;padding:7px 10px}.btn:disabled{opacity:.45;cursor:not-allowed}.presets{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0}.help{font-size:11px;color:#8396ac;line-height:1.6}.help strong{color:#d4e4f3}.notice{background:#1d2838;border-left:2px solid #ffbb67;border-radius:4px;padding:11px;font-size:11px;color:#d4dce8}
+.mapcard{min-height:615px;display:flex;flex-direction:column}.toolbar{padding:13px 15px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.modes{display:flex;gap:5px;flex-wrap:wrap}.mode{border:1px solid #35435c;background:transparent;color:#c5d1e0;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:800;font-size:11px}.mode.active{background:#35445b;border-color:#87a6c8;color:white}.mode.b.active{background:#462a28;border-color:var(--orange)}.mode.c.active{background:#174a46;border-color:var(--cyan)}.mapstage{position:relative;height:505px;background:radial-gradient(circle at 56% 42%,#23394c,#0b1220 54%,#060c16);overflow:hidden}.earthfallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:25px;color:#adc2db;z-index:1;pointer-events:none}.earthfallback .sphere{width:190px;height:190px;border-radius:50%;background:radial-gradient(circle at 28% 26%,#3a7582 0,#1a4467 34%,#112235 72%,#0b1120 95%);box-shadow:inset -30px -18px 45px #050e1e,0 0 65px #5082a22a;border:1px solid #6195b140;margin-bottom:20px}.earthfallback small{font-size:12px;max-width:440px}.earthfallback.loaded{display:none}
+#cesiumContainer{position:absolute;inset:0;z-index:2}.map-hud{position:absolute;z-index:8;top:15px;left:15px;max-width:min(380px,calc(100% - 30px));pointer-events:none;background:#091422c2;border:1px solid #374b60;border-radius:10px;padding:10px 13px;font-size:11px;color:#c3d5e5;backdrop-filter:blur(9px)}.map-hud strong{color:#fff}.map-bottom{position:absolute;z-index:9;bottom:10px;left:10px;right:10px;display:flex;gap:8px;align-items:center;justify-content:space-between;pointer-events:none}.map-bottom>*{pointer-events:auto}.overlay-right{background:#06101ad9;border:1px solid #405267;border-radius:8px;padding:5px 10px;font-size:11px}.map-actions{padding:12px 14px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;border-top:1px solid #26364c}.mini{color:#92a8c1;font-size:11px}.metrics{display:flex;flex-wrap:wrap;gap:10px}.metric{background:#0d1724;border:1px solid #293a4f;border-radius:8px;padding:7px 11px;font-size:11px;color:#b5c7da}.metric b{display:block;color:#eef6ff;font-size:16px}
+.fx{position:absolute;width:160px;height:160px;z-index:6;pointer-events:none;display:none;transform:translate(-50%,-60%)}.fx.on{display:block}.fx:before{content:"";position:absolute;inset:23%;border-radius:50%;background:radial-gradient(circle,#fff9db 1%,#ffd0a6 15%,#ff854e8c 38%,transparent 72%);filter:blur(2px);animation:flash 3.2s ease-out both}.fx:after{content:"";position:absolute;left:28px;top:0;width:115px;height:100px;border-radius:48% 52% 56% 45%;background:radial-gradient(circle at 35% 38%,#e5d4c8b8,#8296a6a8 54%,#3747593d 80%,transparent);filter:blur(8px);animation:mist 3.8s ease-out both}@keyframes flash{0%{opacity:0;transform:scale(.05)}10%{opacity:1;transform:scale(.5)}23%{opacity:.92;transform:scale(1.3)}100%{opacity:0;transform:scale(2.5)}}@keyframes mist{0%{opacity:0;transform:translateY(40px) scale(.15)}25%{opacity:.8}100%{opacity:0;transform:translateY(-84px) scale(1.75)}}
+.section{margin:35px 0}.sub{font-size:13px;margin-bottom:20px}.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.path{padding:21px;min-height:205px}.path .letter{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid #435775;border-radius:11px;font-weight:800;color:var(--cyan);font-size:21px;margin-bottom:16px}.path.b .letter{color:var(--orange)}.path.c .letter{color:#99aaff}.path p{font-size:12px}.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{background:#101925;border:1px solid var(--line);border-radius:11px;padding:17px}.stat .v{font-size:24px;font-weight:800;margin:6px 0}.stat small{color:#8da0b5}.panel-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:13px}.reporttable{width:100%;border-collapse:collapse;font-size:12px}.reporttable th,.reporttable td{text-align:left;border-bottom:1px solid #29394f;padding:11px 8px;vertical-align:top}.reporttable th{font-size:11px;color:#93a9c2}.tag{border:1px solid #42566d;border-radius:6px;padding:3px 7px;font-size:10px;white-space:nowrap;color:#cde0f7}.tag.ok{color:#74e3b5;border-color:#356c60}.tag.warn{color:#f3c886;border-color:#80694a}.tag.dim{color:#a5b8ca}.scroll{max-height:280px;overflow:auto}.sum{font-size:28px;font-weight:850}.costgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}.costbox{background:#101a29;border:1px solid #2e4057;border-radius:11px;padding:16px}.costbox small{color:#a8bdce;font-size:11px}.costbox strong{display:block;font-size:23px;margin-top:4px}.costbox.active{border-color:#447a78}.inline-number{display:flex;justify-content:space-between}.inline-number strong{color:white}.ref{font-size:12px;color:#b4c2d4;padding:4px 0}.ref a{word-break:break-all}.fineprint{font-size:11px;color:#8d9fb3;border-top:1px solid var(--line);padding-top:14px;margin-top:16px}.footer{border-top:1px solid var(--line);padding:25px 0 45px;color:#8599af;font-size:11px}.testempty{padding:30px 10px;color:#839ab2;font-size:12px;text-align:center}.ce{color:var(--cyan)}.or{color:var(--orange)}
+@media(max-width:920px){.layout,.panel-grid{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr}.mapstage{height:450px}.nav{display:none}}
+@media(max-width:650px){.wrap{width:calc(100% - 22px)}.hero{padding:24px 0 12px}.side,.three,.costgrid{grid-template-columns:1fr}.stats-grid{grid-template-columns:1fr 1fr}.mapstage{height:410px}.mapcard{min-height:0}.map-actions .btn{flex:1}.modes{width:100%}.mode{flex:1}.panel-grid{grid-template-columns:1fr}.toolbar{align-items:start}.map-bottom{flex-wrap:wrap}.path{min-height:0}}
+</style>
+<script>window.CESIUM_BASE_URL="https://cdn.jsdelivr.net/npm/cesium@1.137.0/Build/Cesium/";</script>
+<script defer src="https://cdn.jsdelivr.net/npm/cesium@1.137.0/Build/Cesium/Cesium.js"></script>
+</head>
+<body>
+<header><div class="wrap top"><div class="brand"><i></i> GEO EXPERIENCE LAB <span style="color:#859eb4;font-size:10px;font-weight:500">/ 技术验证 V0.1</span></div><div class="nav"><a href="#lab">地图体验</a><a href="#options">方案对比</a><a href="#cost">成本测算</a><a href="#evidence">证据与风险</a></div><span class="pill">公开讨论版 · 非产品承诺</span></div></header>
+<main class="wrap">
+<section class="hero"><div class="eyebrow">ENGINEERING FEASIBILITY / 2026-11-09</div><h1>先验证体验，<br><span class="ce">再决定技术。</span></h1><p class="lead">三条地图数据路线，一套交互体验。只研究现成影像、摄影测量 3D 数据与抽象视觉动画的集成可行性；不自建地球和建筑，不以技术复杂度为目标。</p><div class="statusline"><span class="chip">✓ 官方价格与接入文档已核实</span><span class="chip">◌ 地图加载需要用户浏览器联网</span><span class="chip">◌ Google 3D 需授权 Cesium ion Token</span><span class="chip">◌ 实机 FPS / 账单未完成</span></div></section>
+<section id="lab" class="layout">
+<div class="side">
+<div class="card pad"><h3>① 搜索与定位</h3><form id="searchForm"><label for="address">全球地点 / 具体地址</label><div class="row"><input id="address" type="text" placeholder="Paris, France" autocomplete="off" aria-label="搜索地址"><button class="btn primary" type="submit">搜索</button></div></form><div class="presets"><button class="btn small preset" data-id="nyc">纽约 · 曼哈顿</button><button class="btn small preset" data-id="paris">法国 · 巴黎</button><button class="btn small preset" data-id="tokyo">日本 · 东京</button><button class="btn small preset" data-id="rural">乡村 · 低覆盖</button></div><div class="help">地址搜索临时使用 OSM Nominatim 公共 API（仅少量手动测试，不自动补全）。<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener">使用政策</a></div><div id="searchStatus" class="help" aria-live="polite"></div></div>
+<div class="card pad"><h3>② 地图数据源</h3><label for="imagery">A · 卫星影像</label><select id="imagery"><option value="esri">Esri World Imagery（无需 Token 的预研）</option><option value="ion">Cesium World Imagery（需自己的 Token）</option></select><label for="token">Cesium ion 临时访问 Token（可选）</label><input id="token" type="password" placeholder="只用于当前页面内存，不上传本站" autocomplete="off"><div class="row" style="margin-top:9px"><button class="btn small" id="applyToken">应用 Token</button><button class="btn small" id="clearToken">清除</button></div><p class="help">B 使用你已确认的 ion Google 3D Tiles 资产 ID 2275207。Token 不写入仓库、不存储到 LocalStorage；第三方地图请求仍会携带凭证，请对 Token 设置访问域名与最小权限。</p></div>
+<div class="card pad"><h3>③ 测试条件</h3><label for="view">地图相机</label><select id="view"><option value="aerial">鸟瞰 · 45°</option><option value="top">正俯视 · 90°</option><option value="close">近景 · 低角度</option></select><div class="notice" style="margin-top:12px">本页的光雾动画仅用于验证图层对齐与视觉交互，不模拟实际物理过程、影响范围或损害。</div></div>
+</div>
+<div class="card mapcard">
+<div class="toolbar"><div class="modes"><button id="modeA" class="mode active">A · 卫星影像</button><button id="modeB" class="mode b">B · 真实 3D</button><button id="modeC" class="mode c">C · 混合模式</button></div><div id="cToggle" class="row" style="display:none"><button id="c2d" class="btn small accent">2D 影像</button><button id="c3d" class="btn small">3D 城市</button></div></div>
+<div class="mapstage" id="mapStage">
+<div class="earthfallback" id="fallback"><div class="sphere"></div><strong>正在加载全球地图引擎</strong><small>如果地图资源被当前网络屏蔽，页面其余的方案比较和成本工具仍可使用。</small></div>
+<div id="cesiumContainer"></div><div class="fx" id="fx"></div>
+<div class="map-hud"><div><strong id="liveMode">A / 卫星影像</strong> · <span id="placeLabel">曼哈顿，纽约</span></div><div id="mapStatus" style="margin-top:4px">等待 Cesium 初始化…</div></div>
+<div class="map-bottom"><div class="overlay-right" id="coords">40.7484° N · 73.9857° W</div><div class="overlay-right">影像和模型版权归各数据提供方 · 仅限预研</div></div>
+</div>
+<div class="map-actions"><button class="btn primary" id="play">▶ 光雾动画示意</button><button class="btn" id="save">＋ 记录本次测试</button><button class="btn" id="export">↓ 导出测试 JSON</button><span class="mini" id="stageNotice">非物理演示</span></div>
+<div class="map-actions metrics"><div class="metric">当前帧率 <b id="fps">—</b></div><div class="metric">地图首帧 <b id="firstFrame">—</b></div><div class="metric">资源请求计数 <b id="requests">—</b></div><div class="metric">场景状态 <b id="ready" style="font-size:13px">未验证</b></div></div>
+</div>
+</section>
+<section id="options" class="section"><div class="eyebrow">OPTIONS / NOT A FINAL DECISION</div><h2>三种路线，分别取证</h2><p class="sub">不预设赢家：A 和 B 比较数据质量与成本；C 只验证组合是否能降低整体成本并保持体验。</p>
+<div class="three">
+<div class="card path"><div class="letter">A</div><h3>卫星影像优先</h3><p>全球底图提供高质量俯视纹理，无需建模建筑。适合优先验证 2D 地图与界面体验。</p><div class="tag warn">近景建筑侧面：不由 2D 影像提供</div></div>
+<div class="card path b"><div class="letter">B</div><h3>摄影测量 3D</h3><p>使用 Google Photorealistic 3D Tiles 的现成城市数据。高真实感，但覆盖、令牌、性能、授权和费用需要核实。</p><div class="tag warn">实机画面：待带 Token 验证</div></div>
+<div class="card path c"><div class="letter">C</div><h3>组合使用</h3><p>2D 采用优选影像，进入有覆盖的 3D 区域时切换到真实三维数据；沿用地址、镜头位置与动画。</p><div class="tag dim">混合模式：可在上方操作验证</div></div>
+</div>
+<div class="card pad" style="margin-top:13px"><h3>对比矩阵（无伪造分数）</h3><div style="overflow:auto"><table class="reporttable"><thead><tr><th>维度</th><th>A 影像</th><th>B 3D Tiles</th><th>C 混合</th></tr></thead><tbody>
+<tr><td>全球地表影像</td><td>由影像供应商提供</td><td>取决于 3D 覆盖</td><td>影像保底</td></tr>
+<tr><td>真实建筑侧面</td><td>不提供</td><td>覆盖区提供</td><td>覆盖区启用</td></tr>
+<tr><td>额外自建建筑模型</td><td>不需要</td><td>不需要</td><td>不需要</td></tr>
+<tr><td>开发复杂度</td><td>预计较低；待测工时</td><td>令牌与 Tiles 集成；待测</td><td>需要状态切换；待测</td></tr>
+<tr><td>视觉特效对齐</td><td>待实测</td><td>待实测</td><td>待实测</td></tr>
+<tr><td>真实每次访问成本</td><td>供应商待定</td><td>实际计费待测</td><td>依赖模式使用率</td></tr>
+<tr><td>对外商业许可</td><td><span class="tag warn">待核实</span></td><td><span class="tag warn">待核实</span></td><td><span class="tag warn">均需核实</span></td></tr>
+</tbody></table></div></div>
+</section>
+<section id="cost" class="section"><div class="eyebrow">COST MODEL / OFFICIAL RATE + ASSUMPTIONS</div><h2>互动成本估算</h2><p class="sub">下面仅计算<strong>Google Maps Platform 直接计费</strong>的 2D 瓦片与摄影测量 3D 根瓦片。并不是 Esri 或 Cesium ion 的报价，也不是已发生的真实费用。</p>
+<div class="panel-grid">
+<div class="card pad"><h3>输入业务与请求量假设</h3><label for="visits">每月地图访问次数 <span id="visitsVal" style="float:right;color:white"></span></label><input id="visits" type="range" min="10000" max="1000000" step="10000" value="100000"><label for="twoD">每次 2D 访问的计费瓦片数 <span id="twoDVal" style="float:right;color:white"></span></label><input id="twoD" type="range" min="5" max="100" step="5" value="20"><label for="threeD">进入 3D 的访问比例 <span id="threeDVal" style="float:right;color:white"></span></label><input id="threeD" type="range" min="0" max="100" step="5" value="20"><label for="roots">每次 3D 访问的根瓦片计费请求数 <span id="rootsVal" style="float:right;color:white"></span></label><input id="roots" type="range" min="1" max="5" step="1" value="1"><div class="notice" style="margin-top:16px">真实计费请求不等于浏览器所有网络请求；这里的瓦片数与根请求次数都是假设。地址搜索、云服务、商业许可及税费尚未计入。</div></div>
+<div class="card pad"><h3>按 Google 官方 SKU 估算 / 月</h3><div class="costgrid"><div class="costbox"><small>2D Map Tiles</small><strong id="price2d">$0</strong><span class="help" id="uses2d"></span></div><div class="costbox"><small>Photorealistic 3D</small><strong id="price3d">$0</strong><span class="help" id="uses3d"></span></div><div class="costbox active"><small>合计（仅这两项）</small><strong id="total">$0</strong><span class="help">USD / 月</span></div></div><p style="font-size:12px">公开起始单价：2D <strong>$0.60/千次</strong>（每月前 100,000 次免费）；3D <strong>$6/千次根请求</strong>（每月前 1,000 次免费），达到量级后依阶梯调整。</p><div class="notice">A 页面默认使用 Esri World Imagery 作无需 Token 的技术展示。<strong>此计算结果不可被解释为 A 的真实商业费用。</strong> Cesium ion Community 具有独立配额，正式面向公众运营的许可与价格需要另外确认。</div></div>
+</div>
+<div class="card pad" style="margin-top:13px"><h3>计费渠道不可混用</h3><div style="overflow:auto"><table class="reporttable"><thead><tr><th>供应商 / 渠道</th><th>已核实官方口径</th><th>仍缺少的证据</th></tr></thead><tbody>
+<tr><td>Google Maps 直接使用</td><td>2D 每张可计费瓦片；3D 主要按根瓦片请求，阶梯计费</td><td>实际每次会话消耗、是否能开通 Billing</td></tr>
+<tr><td>Cesium ion Community</td><td>个人非商业预研；全球影像 1,000 会话/月；Google 3D 根瓦片 1,000/月</td><td>具体项目的商业授权及增长后的套餐</td></tr>
+<tr><td>Esri World Imagery</td><td>可验证公开服务的可达性；影像分辨率依地区而异</td><td>正式产品中的许可、请求计量与报价</td></tr>
+<tr><td>地址搜索</td><td>本 Demo 采用 OSM 公共 Nominatim 少量手动查询</td><td>正式业务需要可扩展地理编码服务及费用</td></tr>
+</tbody></table></div></div>
+</section>
+<section id="evidence" class="section"><div class="eyebrow">EVIDENCE / REVIEW WITH PRODUCT MANAGER</div><h2>真实测试记录与风险</h2><p class="sub">运行地图后点击「记录本次测试」，把浏览器观察结果保存成 JSON 发给团队。本站<strong>不会编造 FPS、场景加载时间或 API 实际账单</strong>。</p>
+<div class="panel-grid">
+<div class="card pad"><div class="row" style="justify-content:space-between"><h3>本机测试结果</h3><button class="btn small" id="clearRecords">清空</button></div><div class="scroll" id="records"><div class="testempty">尚未运行并记录任何地图测试。<br>上方地图运行后可以生成第一条实测。</div></div><p class="help">资源请求数来自浏览器 Performance API，仅供性能诊断；跨域传输字节数可能不可读，不能用于直接计算地图账单。</p></div>
+<div class="card pad"><h3>技术团队交付状态</h3><div style="overflow:auto"><table class="reporttable"><tbody>
+<tr><td>官方公开费率与配额</td><td><span class="tag ok">已核对</span></td></tr>
+<tr><td>统一地图 UI 与模式切换逻辑</td><td><span class="tag warn">已实现代码，待浏览器验收</span></td></tr>
+<tr><td>Esri 影像服务元数据</td><td><span class="tag ok">公开接口可读取</span></td></tr>
+<tr><td>Google 3D 动态渲染</td><td><span class="tag warn">需要 Token 和联网实测</span></td></tr>
+<tr><td>桌面及手机 FPS</td><td><span class="tag warn">未实测</span></td></tr>
+<tr><td>商业授权与最终运营费</td><td><span class="tag warn">待供应商确认</span></td></tr>
+</tbody></table></div><p class="help">浏览器分享链接本身不代表第三方服务已经通过验收。特别是 B 的数据覆盖、Token 域名限制与 WebGL 设备能力。</p></div>
+</div>
+<div class="card pad" style="margin-top:13px"><h3>给产品经理讨论的关键问题</h3><p style="font-size:12px">免费用户是否只需要高质量俯视影像？会员是否必须有真实建筑立面？有多少人实际进入三维模式？如何在地图用量上限制成本？哪些地区三维数据缺失时允许回退？这些属于产品取舍，不在本技术预研中提前下结论。</p><div class="row" style="flex-wrap:wrap"><span class="chip">原则：以完成体验为先</span><span class="chip">方案：允许 A+B 复合</span><span class="chip">结论：不替产品经理决策</span></div></div>
+<div class="card pad" style="margin-top:13px"><h3>来源与使用限制</h3>
+<div class="ref">Google Maps Platform 官方计费：<a href="https://developers.google.com/maps/billing-and-pricing/pricing" target="_blank" rel="noopener">官方价格表 ↗</a></div>
+<div class="ref">Google 地图瓦片计费规则：<a href="https://developers.google.com/maps/documentation/tile/usage-and-billing" target="_blank" rel="noopener">Map Tiles Usage & Billing ↗</a></div>
+<div class="ref">Cesium ion 套餐、商业范围与额度：<a href="https://cesium.com/platform/cesium-ion/pricing/" target="_blank" rel="noopener">Cesium 官方套餐 ↗</a></div>
+<div class="ref">Cesium Photorealistic 3D 接入示例：<a href="https://cesium.com/learn/cesiumjs-learn/cesiumjs-photorealistic-3d-tiles/" target="_blank" rel="noopener">官方技术教程 ↗</a></div>
+<div class="ref">Esri World Imagery 元数据：<a href="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer?f=pjson" target="_blank" rel="noopener">影像服务元数据 ↗</a></div>
+<div class="ref">OSM Nominatim 公共 API 政策：<a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener">地理编码政策 ↗</a></div>
+<p class="fineprint">本网页仅用于小范围工程技术评估。抽象光雾动画不对应真实物理过程。当前所有网络地图数据遵循对应提供方许可、署名与访问条款；禁止将本预研的临时公共服务用法直接当成生产架构。公开分享时请勿上传任何可识别用户或账户凭证。</p></div>
+</section>
+</main>
+<div class="footer"><div class="wrap">Geo Experience Lab · 独立技术预研演示 · 不提供实际事件损害预测 · Made for engineering discussion, not a product decision.</div></div>
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+var places={nyc:{name:"纽约 · 曼哈顿",lat:40.7484,lon:-73.9857},paris:{name:"巴黎 · 市中心",lat:48.8584,lon:2.2945},tokyo:{name:"东京 · 市中心",lat:35.6812,lon:139.7671},rural:{name:"法国 · 乡村",lat:46.481,lon:3.112}};
+var s={mode:"A",display:"A",src:"esri",token:"",viewer:null,tileset:null,lat:places.nyc.lat,lon:places.nyc.lon,place:places.nyc.name,records:[],fps:0,frames:[],firstFrame:null,startTime:performance.now(),switchedAt:performance.now(),lastGeocode:0,requestBaseline:0,ready:false};
+var pnum=function(n){return Number(n).toLocaleString("zh-CN");};
+var money=function(n){return "$"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});};
+var status=function(t,isError){$("mapStatus").textContent=t;$("ready").textContent=isError?"错误":t.indexOf("已")>=0?"已显示":"加载中";};
+var stats=function(){return performance.getEntriesByType("resource").filter(function(x){return /arcgisonline\.com|cesium\.com|virtualearth\.net|googleapis\.com|nominatim\.openstreetmap\.org/.test(x.name);});};
+var view=function(){return $("view").value;};
+var fly=function(){
+if(!s.viewer)return;
+var C=window.Cesium,h=view()==="top"?9500:view()==="close"?1700:7300;
+var pitch=view()==="top"?-90:view()==="close"?-32:-61;
+s.viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(s.lon,s.lat,h),orientation:{heading:0,pitch:C.Math.toRadians(pitch),roll:0},duration:1.5});
+};
+var setPlace=function(x){s.lat=x.lat;s.lon=x.lon;s.place=x.name;$("placeLabel").textContent=s.place;$("coords").textContent=s.lat.toFixed(4)+"° / "+s.lon.toFixed(4)+"°";fly();};
+var drawMarkers=function(){if(!s.viewer)return;try{s.viewer.entities.removeAll();s.viewer.entities.add({position:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,60),point:{pixelSize:11,color:Cesium.Color.fromCssColorString("#ff9c61"),outlineColor:Cesium.Color.WHITE,outlineWidth:2,disableDepthTestDistance:Number.POSITIVE_INFINITY}});}catch(e){}};
+var geocode=async function(q){
+if(!q.trim())return;var now=Date.now();
+if(now-s.lastGeocode<1100){$("searchStatus").textContent="请至少间隔 1 秒再搜索。";return;}
+s.lastGeocode=now;$("searchStatus").textContent="正在查询地址…";
+try{
+var url="https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q="+encodeURIComponent(q);
+var r=await fetch(url,{headers:{"Accept":"application/json"}});
+if(!r.ok)throw Error("HTTP "+r.status);
+var j=await r.json();if(!j.length)throw Error("未找到此地址，请换一个关键词");
+setPlace({name:j[0].display_name.split(",").slice(0,2).join("，"),lat:Number(j[0].lat),lon:Number(j[0].lon)});
+drawMarkers();$("searchStatus").textContent="已定位： "+s.place;
+}catch(e){$("searchStatus").textContent="查询失败："+e.message+"。可先使用预设城市。";}
+};
+var setupCesium=async function(){
+if(!window.Cesium){status("Cesium 脚本未加载。请检查 CDN 网络或浏览器限制。",true);$("fallback").querySelector("small").textContent="当前网络不能加载 Cesium CDN。比较矩阵与成本模型仍可使用。";return;}
+try{
+var C=Cesium;
+s.viewer=new C.Viewer("cesiumContainer",{animation:false,timeline:false,geocoder:false,baseLayerPicker:false,baseLayer:false,homeButton:false,fullscreenButton:false,navigationHelpButton:false,infoBox:false,selectionIndicator:false,sceneModePicker:false,requestRenderMode:false,terrainProvider:new C.EllipsoidTerrainProvider(),scene3DOnly:true});
+s.viewer.scene.globe.depthTestAgainstTerrain=false;
+s.viewer.scene.fog.enabled=false;
+s.viewer.scene.postRender.addEventListener(function(){
+if(s.firstFrame===null){s.firstFrame=performance.now()-s.startTime;$("firstFrame").textContent=Math.round(s.firstFrame)+"ms";}
+var t=performance.now();s.frames.push(t);while(s.frames.length && t-s.frames[0]>3000)s.frames.shift();
+if(s.frames.length>3)s.fps=(s.frames.length-1)*1000/(t-s.frames[0]);
+if($("fx").classList.contains("on")){try{var xy=C.SceneTransforms.worldToWindowCoordinates(s.viewer.scene,C.Cartesian3.fromDegrees(s.lon,s.lat,200));if(xy){$("fx").style.left=xy.x+"px";$("fx").style.top=xy.y+"px";}}catch(e){}}
+});
+setInterval(function(){if(s.viewer){$("fps").textContent=isFinite(s.fps)&&s.fps>0?s.fps.toFixed(1):"—";$("requests").textContent=pnum(stats().length);}},1000);
+$("fallback").classList.add("loaded");
+fly();drawMarkers();
+await loadA();
+}catch(e){status("初始化失败："+e.message,true);$("fallback").classList.remove("loaded");}
+};
+var loadA=async function(){
+if(!s.viewer)return false;
+try{
+var C=Cesium;
+s.viewer.scene.globe.show=true;
+if(s.tileset)s.tileset.show=false;
+s.viewer.imageryLayers.removeAll();
+var layer;
+if($("imagery").value==="ion"){
+if(!s.token){status("Cesium World Imagery 需要你自己的 ion Token",true);return false;}
+C.Ion.defaultAccessToken=s.token;
+layer=C.ImageryLayer.fromWorldImagery({style:C.IonWorldImageryStyle.AERIAL});
+}else{
+var prov=await C.ArcGisMapServerImageryProvider.fromUrl("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer",{enablePickFeatures:false});
+layer=new C.ImageryLayer(prov);
+}
+s.viewer.imageryLayers.add(layer);
+s.display="A";$("liveMode").textContent="A / "+($("imagery").value==="ion"?"Cesium World Imagery":"Esri World Imagery");
+status("底图已接入；高清瓦片仍由浏览器逐步加载",false);
+s.viewer.scene.requestRender();return true;
+}catch(e){status("卫星影像加载失败："+e.message,true);return false;}
+};
+var loadB=async function(){
+if(!s.viewer){status("Cesium 未初始化，无法进入 B",true);return false;}
+if(!s.token){status("B 需要你自己的 Cesium ion Token；本页不会伪造 3D 效果。",true);return false;}
+try{
+Cesium.Ion.defaultAccessToken=s.token;
+if(!s.tileset){
+status("正在获取授权 Google 3D Tiles…");
+try{s.tileset=await Cesium.createGooglePhotorealistic3DTileset();}
+catch(first){s.tileset=await Cesium.Cesium3DTileset.fromIonAssetId(2275207);}
+s.tileset.maximumScreenSpaceError=16;
+s.viewer.scene.primitives.add(s.tileset);
+}
+s.tileset.show=true;
+s.viewer.scene.globe.show=false;
+s.display="B";$("liveMode").textContent="B / Google Photorealistic 3D Tiles";
+status("3D 数据源已连接；建筑瓦片仍需逐步加载",false);
+s.viewer.scene.requestRender();return true;
+}catch(e){status("3D 加载失败："+e.message,true);return false;}
+};
+var choose=async function(mode,within){
+s.mode=mode;
+["A","B","C"].forEach(function(k){$("mode"+k).classList.toggle("active",k===mode);});
+$("cToggle").style.display=mode==="C"?"flex":"none";
+s.switchedAt=performance.now();s.requestBaseline=stats().length;
+var target=mode==="C"?(within||s.display):mode;
+if(mode==="C" && target!=="B")target="A";
+var ok=target==="A"?await loadA():await loadB();
+if(ok){fly();drawMarkers();}
+$("c2d").classList.toggle("accent",s.display==="A");$("c3d").classList.toggle("accent",s.display==="B");
+};
+var playFx=function(){
+var f=$("fx");f.classList.remove("on");void f.offsetWidth;f.classList.add("on");$("stageNotice").textContent="正在播放抽象光雾效果，不代表实际物理结果";
+setTimeout(function(){f.classList.remove("on");$("stageNotice").textContent="非物理演示";},3900);
+};
+var capture=function(){
+var item={time:new Date().toISOString(),requestedMode:s.mode,visibleSource:s.display,source:s.display==="A"?$("imagery").value:"Google 3D Tiles via Cesium ion",location:s.place,latitude:s.lat,longitude:s.lon,view:view(),fps_sample:s.viewer&&s.fps>0?Number(s.fps.toFixed(1)):null,first_frame_ms:s.viewer?s.firstFrame:null,resource_entries_since_mode_change:stats().length-s.requestBaseline,resource_entries_total:stats().length,model_loaded:!!(s.tileset&&s.tileset.show),is_actual_billing:false,note:"Browser Performance API counts are NOT provider billing events. Load completion not scientifically verified."};
+s.records.unshift(item);renderRecords();$("stageNotice").textContent="已保存当前浏览器观测（非账单数据）";
+};
+var renderRecords=function(){
+if(!s.records.length){$("records").innerHTML='<div class="testempty">尚未运行并记录任何地图测试。</div>';return;}
+var head='<table class="reporttable"><thead><tr><th>时间 / 模式</th><th>地点</th><th>FPS</th><th>诊断请求</th></tr></thead><tbody>';
+$("records").innerHTML=head+s.records.map(function(x){return '<tr><td>'+x.time.slice(11,19)+' · '+x.requestedMode+'/'+x.visibleSource+'</td><td>'+x.location.replace(/</g,"&lt;")+'</td><td>'+(x.fps_sample===null?"未获得":x.fps_sample)+'</td><td>'+x.resource_entries_since_mode_change+'</td></tr>';}).join("")+"</tbody></table>";
+};
+var exportJSON=function(){
+var payload={report:"Geo Experience Lab V0.1",exportedAt:new Date().toISOString(),disclaimer:"Observational technical diagnostic, not actual billable usage or verified global coverage.",records:s.records,referencePrices:"https://developers.google.com/maps/billing-and-pricing/pricing"};
+var blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="geo-experience-lab-report.json";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},2000);
+};
+function stepped(n,free,breaks,rates){var left=Math.max(0,n-free),cost=0,prev=0;for(var i=0;i<breaks.length&&left>0;i++){var width=breaks[i]-prev;var take=Math.min(left,width);cost+=take*rates[i]/1000;left-=take;prev=breaks[i];}if(left>0)cost+=left*rates[rates.length-1]/1000;return cost;}
+var updateCost=function(){
+var visits=+$("visits").value,per2d=+$("twoD").value,share=+$("threeD").value,roots=+$("roots").value;
+$("visitsVal").textContent=pnum(visits);$("twoDVal").textContent=per2d;$("threeDVal").textContent=share+"%";$("rootsVal").textContent=roots;
+var n2d=visits*per2d, n3d=Math.round(visits*share/100)*roots;
+var c2d=stepped(n2d,100000,[1000000,5000000,10000000,50000000,Infinity],[.60,.48,.36,.18,.045]);
+var c3d=stepped(n3d,1000,[100000,500000,1000000,5000000,Infinity],[6,5.1,4.2,3.3,2.4]);
+$("price2d").textContent=money(c2d);$("price3d").textContent=money(c3d);$("total").textContent=money(c2d+c3d);
+$("uses2d").textContent=pnum(n2d)+" 次计费瓦片假设";$("uses3d").textContent=pnum(n3d)+" 次根请求假设";
+};
+document.addEventListener("DOMContentLoaded",function(){
+document.querySelectorAll(".preset").forEach(function(b){b.addEventListener("click",function(){setPlace(places[b.dataset.id]);drawMarkers();});});
+$("searchForm").addEventListener("submit",function(e){e.preventDefault();geocode($("address").value);});
+$("modeA").addEventListener("click",function(){choose("A");});
+$("modeB").addEventListener("click",function(){choose("B");});
+$("modeC").addEventListener("click",function(){choose("C","A");});
+$("c2d").addEventListener("click",function(){choose("C","A");});
+$("c3d").addEventListener("click",function(){choose("C","B");});
+$("applyToken").addEventListener("click",function(){s.token=$("token").value.trim();$("token").value="";status(s.token?"临时 Token 已应用；可点击 B 验证 3D":"没有输入 Token",!s.token);});
+$("clearToken").addEventListener("click",function(){s.token="";$("token").value="";status("临时 Token 已清除。");});
+$("imagery").addEventListener("change",function(){if(s.display==="A")choose(s.mode==="C"?"C":"A","A");});
+$("view").addEventListener("change",fly);
+$("play").addEventListener("click",playFx);$("save").addEventListener("click",capture);$("export").addEventListener("click",exportJSON);
+$("clearRecords").addEventListener("click",function(){s.records=[];renderRecords();});
+["visits","twoD","threeD","roots"].forEach(function(x){$(x).addEventListener("input",updateCost);});
+updateCost();setupCesium();
+});
+})();
+</script>
+</body>
+</html>
