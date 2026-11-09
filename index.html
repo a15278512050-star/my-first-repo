@@ -20,8 +20,8 @@ a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
 #cesium{position:absolute;inset:0}.fallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;gap:13px;text-align:center;padding:25px}
 .globe{width:190px;height:190px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#567c8b,#183449 55%,#0e1826 72%);box-shadow:inset -40px -15px 45px #080e19,0 0 70px #33586966;display:grid;place-items:center;color:#a6d6e7;font-size:54px}
 .sceneTag{position:absolute;left:16px;top:16px;padding:8px 12px;background:#090f1ac7;border:1px solid #ffffff23;border-radius:9px;pointer-events:none;font-size:12px}
-#effect{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;display:none;filter:saturate(1.15)}
-#effect.play{display:block}.scene:has(#effect.play){box-shadow:inset 0 0 100px #c76a4524}
+#effect{display:none}
+
 .fxCaption{position:absolute;bottom:15px;left:16px;background:#071321bc;color:#ecdbc9;border:1px solid #b47c6752;border-radius:7px;padding:8px 11px;z-index:6;font-size:11px;display:none;backdrop-filter:blur(5px)}
 .fxCaption.active{display:block}
 .footControls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#0f1724;padding:10px 16px;border-top:1px solid var(--line)}.footControls .sub{flex:1}
@@ -38,7 +38,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.135.0/Build/Cesium/Cesium.js" defer></script>
 </head>
 <body>
-<header class="top"><div><div class="brand">GEO<span style="color:#ff823a"> / </span>EXPERIENCE LAB <b>v0.3</b></div><div class="sub">全球地图 · A/B/C 技术可行性验证 · 产品经理评审视图</div></div><div class="pill">公开展示页 · 非生产环境</div></header>
+<header class="top"><div><div class="brand">GEO<span style="color:#ff823a"> / </span>EXPERIENCE LAB <b>v0.4</b></div><div class="sub">全球地图 · A/B/C 技术可行性验证 · 产品经理评审视图</div></div><div class="pill">公开展示页 · 非生产环境</div></header>
 <main class="app">
  <section class="left">
   <div class="controls">
@@ -48,16 +48,16 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px
   <div class="scene" id="scene">
    <div id="cesium"></div><div id="fallback" class="fallback"><div class="globe">◎</div><strong id="fallbackText">正在初始化全球地图…</strong><span class="muted">如果地图无法加载，请检查浏览器 WebGL 与网络/CDN</span></div>
    <div class="sceneTag"><b id="sceneMode">A · 全球卫星影像</b><div id="locationText" class="sub">纽约曼哈顿 · 40.7580, -73.9855</div></div>
-   <canvas id="effect" aria-label="地图锚定的非物理教学云雾视觉动画"></canvas><div class="fxCaption" id="fxCaption">CINEMATIC VISUAL STUDY · 多层纹理云雾与光照 · 非物理预测</div>
+   <div id="effect" aria-hidden="true"></div><div class="fxCaption" id="fxCaption">3D GEO-ANCHORED VISUAL · 地图触点 · 云雾与扩散环 · 无真实事件数据</div>
   </div>
   <div class="footControls">
-   <button class="active" id="modeA">A · 卫星影像</button><button id="modeB">B · 真实 3D</button><button id="modeC">C · 混合</button><button class="primary" id="animate">▶ 电影化云雾演示</button><button id="reloadA">刷新卫星影像</button><button id="runTest">测量 6 秒</button>
-   <div class="sub" id="mapMsg">初始化中…</div>
+   <button class="active" id="modeA">A · 卫星影像</button><button id="modeB">B · 真实 3D</button><button id="modeC">C · 混合</button><button class="primary" id="animate">▶ 重播云雾与扩散环</button><button id="reloadA">刷新卫星影像</button><button id="runTest">测量 6 秒</button>
+   <div class="sub" id="mapMsg">轻触/点击地图任意位置，可直接选点播放示意动画。</div>
   </div>
  </section>
  <aside class="right">
   <section class="card"><h2>01 / 验证范围和证据等级</h2>
-   <div class="notice">这里只验证地图接入、浏览器可视化、交互和成本量级。动画采用地图锚定、多层纹理和柔光营造的电影化伪体积云雾，属于无比例关系的视觉示意，不包含真实事件预测、危险范围或建筑损毁。</div>
+   <div class="notice">这里只验证地图接入、浏览器可视化、交互和成本量级。地图选点只用于非武器化教学画面：生成一个三维云团与装饰性扩散波环，不表示冲击波物理、真实影响范围或建筑损毁。</div>
    <div class="result"><span>CesiumJS 地图引擎</span><b class="status" id="runtimeStatus">加载中</b></div>
    <div class="result"><span>A / 全球卫星影像</span><b id="aStatus">等待加载</b></div>
    <div class="result"><span>B / 摄影测量 3D Tiles</span><b id="bStatus">需 Cesium ion Token</b></div>
@@ -120,7 +120,7 @@ function stamp(){return new Date().toLocaleTimeString("zh-CN",{hour12:false});}
 function note(t){state.log.unshift("["+stamp()+"] "+t);state.log=state.log.slice(0,24);$("log").textContent=state.log.join("\n");}
 function status(t){$("mapMsg").textContent=t;note(t);}
 function pickMode(m){state.mode=m;["A","B","C"].forEach(function(x){$("mode"+x).classList.toggle("active",x===m);});}
-function country(n,lat,lon){state.name=n;state.lat=lat;state.lon=lon;$("locationText").textContent=n+" · "+lat.toFixed(4)+", "+lon.toFixed(4);if(state.viewer)fly();}
+function country(n,lat,lon){state.name=n;state.lat=lat;state.lon=lon;fxWorld.lat=lat;fxWorld.lon=lon;fxWorld.ground=0;$("locationText").textContent=n+" · "+lat.toFixed(4)+", "+lon.toFixed(4);if(state.viewer)fly();}
 function fly(){if(!state.viewer)return;state.viewer.camera.flyTo({destination:C.Cartesian3.fromDegrees(state.lon,state.lat,state.height),orientation:{heading:C.Math.toRadians(state.heading),pitch:C.Math.toRadians(state.pitch),roll:0},duration:1.25});}
 function firstRendered(start){if(!state.viewer)return;var h=function(){state.viewer.scene.postRender.removeEventListener(h);$("load").textContent=Math.round(perf.now()-start)+" ms";};state.viewer.scene.postRender.addEventListener(h);}
 function showFallback(t){$("fallbackText").textContent=t;$("fallback").style.display="flex";}
@@ -217,129 +217,184 @@ async function changeMode(m){
  else {var next=state.layer==="A"?"B":"A";var ok=await activate(next);if(ok)$("cStatus").textContent="已切换 "+next+"，可继续复测";}
 }
 
-var fxState={canvas:null,ctx:null,sprites:[],puffs:[],running:false,t0:0,raf:0,anchorX:0,anchorY:0};
-function fxSprite(style){
- var cv=document.createElement("canvas");cv.width=cv.height=128;
- var g=cv.getContext("2d"),data=g.createImageData(128,128),a=data.data;
- var colors=[[226,187,154],[150,153,158],[91,100,112],[236,221,200]];
- for(var y=0;y<128;y++)for(var x=0;x<128;x++){
-  var dx=(x-64)/64,dy=(y-64)/64,r=Math.sqrt(dx*dx+dy*dy);
-  var n1=Math.sin(x*.141+y*.11+style*4.7)*Math.cos(x*.074-y*.127);
-  var n2=Math.sin(x*.291-y*.215+style*3.1)*Math.cos(y*.237+x*.19);
-  var n3=Math.sin(x*.511+y*.447+style*2.7);
-  var rough=n1*.09+n2*.07+n3*.035;
-  var density=Math.max(0,Math.min(1,(1-r*.87+rough)*2));
-  var rim=Math.max(0,Math.min(1,(1.03-r+rough)*7));
-  var shade=Math.max(-.22,Math.min(.16,n1*.12+n2*.10));
-  var idx=(y*128+x)*4,b=colors[style];
-  a[idx]=Math.max(0,Math.min(255,b[0]*(1+shade)));
-  a[idx+1]=Math.max(0,Math.min(255,b[1]*(1+shade)));
-  a[idx+2]=Math.max(0,Math.min(255,b[2]*(1+shade)));
-  a[idx+3]=Math.max(0,Math.min(210,Math.pow(density,1.1)*Math.pow(rim,.55)*135));
- }
- g.putImageData(data,0,0);return cv;
+/* V0.4: World-space educational atmosphere; no physical blast scale or hazard calculation. */
+var fxWorld={collection:null,ringEntities:[],puffs:[],sprites:null,marker:null,
+ origin:null,lon:0,lat:0,ground:0,scale:1150,start:0,t:0,active:false,settled:false,lastUpdate:0};
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function seeded(i,k){var n=Math.sin(i*92.74+k*173.29)*53872.954;return n-Math.floor(n);}
+function cloudTexture(kind){
+ var cv=document.createElement("canvas");cv.width=cv.height=160;
+ var ctx=cv.getContext("2d"),im=ctx.createImageData(160,160),d=im.data;
+ var colors=[[238,203,174],[175,176,180],[108,118,130],[242,224,204],[137,146,155]];
+ var color=colors[kind];
+ for(var y=0;y<160;y++){for(var x=0;x<160;x++){
+  var px=(x-79.5)/79.5,py=(y-79.5)/79.5,rad=Math.hypot(px,py);
+  var n=Math.sin(x*.098+kind*4.1)*Math.cos(y*.113-kind*.87)*.18+
+        Math.sin(x*.261+y*.204+kind*3.7)*Math.cos(x*.153-y*.17)*.085+
+        Math.sin(x*.529-y*.485+kind*2.7)*.035;
+  var density=clamp((.96-rad+n)*4,0,1);
+  var shade=clamp((1-py)*.14+n*.4,-.28,.20);
+  var idx=(y*160+x)*4;
+  d[idx]=clamp(color[0]*(1+shade),0,255);
+  d[idx+1]=clamp(color[1]*(1+shade),0,255);
+  d[idx+2]=clamp(color[2]*(1+shade),0,255);
+  d[idx+3]=Math.floor(Math.pow(density,1.7)*190);
+ }}
+ ctx.putImageData(im,0,0);
+ return cv;
 }
-function fxInit(){
- if(fxState.ctx)return;
- fxState.canvas=$("effect");fxState.ctx=fxState.canvas.getContext("2d",{alpha:true});
- fxState.sprites=[fxSprite(0),fxSprite(1),fxSprite(2),fxSprite(3)];
+function ringTexture(){
+ var cv=document.createElement("canvas");cv.width=cv.height=256;
+ var g=cv.getContext("2d"),cx=128,cy=128;
+ var outer=g.createRadialGradient(cx,cy,70,cx,cy,127);
+ outer.addColorStop(0,"rgba(248,213,174,0)");
+ outer.addColorStop(.35,"rgba(244,183,131,0.015)");
+ outer.addColorStop(.62,"rgba(238,202,170,0.16)");
+ outer.addColorStop(.76,"rgba(249,233,212,0.85)");
+ outer.addColorStop(.83,"rgba(255,245,232,0.37)");
+ outer.addColorStop(1,"rgba(255,232,203,0)");
+ g.fillStyle=outer;g.fillRect(0,0,256,256);return cv;
 }
-function fxRand(seed){var x=Math.sin(seed*127.1+78.233)*43758.5453;return x-Math.floor(x);}
-function makeFxPuffs(){
- fxState.puffs=[];
- for(var i=0;i<280;i++){
-  var cap=i<155,stem=i>=155&&i<241,dust=i>=241;
-  var r1=fxRand(i+101),r2=fxRand(i+415),r3=fxRand(i+799),r4=fxRand(i+1201);
-  fxState.puffs.push({
-   kind:cap?0:stem?1:2,
-   x:(r1*2-1)*(cap?.63:stem?.18:1.1),
-   y:r2,drift:(r3*2-1),life:.6+r4*.9,size:.45+r1*.85,
-   shade:cap?(r4>.65?3:r2>.43?1:2):stem?(r2>.45?1:2):1,
-   birth:cap?.55+r2*2.5:stem?.3+r2*2.0:.18+r2*.9,
-   wiggle:r4*6.28
+function disposeWorldFx(){
+ if(!state.viewer)return;
+ if(fxWorld.collection){state.viewer.scene.primitives.remove(fxWorld.collection);fxWorld.collection=null;}
+ for(var i=0;i<fxWorld.ringEntities.length;i++)state.viewer.entities.remove(fxWorld.ringEntities[i]);
+ fxWorld.ringEntities=[];fxWorld.puffs=[];fxWorld.active=false;fxWorld.settled=false;
+}
+function centerWorld(lon,lat,alt){return C.Cartesian3.fromDegrees(lon,lat,alt);}
+function selectMapPoint(cartesian,autoPlay){
+ if(!cartesian||!state.viewer)return;
+ var geo=C.Cartographic.fromCartesian(cartesian);
+ if(!geo)return;
+ var lon=C.Math.toDegrees(geo.longitude),lat=C.Math.toDegrees(geo.latitude);
+ if(!Number.isFinite(lon)||!Number.isFinite(lat))return;
+ state.lon=lon;state.lat=lat;state.name="地图手动选点";
+ fxWorld.lon=lon;fxWorld.lat=lat;
+ fxWorld.ground=clamp(geo.height||0,-200,10000);
+ $("locationText").textContent="已选位置 · "+lat.toFixed(5)+", "+lon.toFixed(5);
+ if(!fxWorld.marker){
+  fxWorld.marker=state.viewer.entities.add({name:"教学可视化观察点",
+   position:centerWorld(lon,lat,fxWorld.ground+30),
+   point:{pixelSize:11,color:C.Color.fromCssColorString("#ffc5a0"),outlineColor:C.Color.fromCssColorString("#32262b"),outlineWidth:3,disableDepthTestDistance:Number.POSITIVE_INFINITY}
   });
+ }else{
+  fxWorld.marker.position=centerWorld(lon,lat,fxWorld.ground+30);
  }
+ note("手动地图选点："+lat.toFixed(5)+", "+lon.toFixed(5));
+ if(autoPlay)plotEffect();else status("已选地理位置；可播放教学云雾和装饰性扩散波。");
 }
-function fxResize(){
- var rect=$("scene").getBoundingClientRect(),d=Math.min(1.7,window.devicePixelRatio||1);
- var canvas=fxState.canvas;
- var w=Math.round(rect.width*d),h=Math.round(rect.height*d);
- if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
- fxState.ctx.setTransform(d,0,0,d,0,0);
- return {width:rect.width,height:rect.height};
-}
-function fxDraw(now){
- if(!fxState.running)return;
- var t=(now-fxState.t0)/1000,duration=8.4,dim=fxResize(),g=fxState.ctx;
- g.clearRect(0,0,dim.width,dim.height);
- if(t>=duration){
-  fxState.running=false;fxState.canvas.classList.remove("play");$("fxCaption").classList.remove("active");note("电影化云雾视觉演示结束");return;
- }
- var x=fxState.anchorX||dim.width/2,y=fxState.anchorY||dim.height*.65;
- var frame=Math.min(dim.width,dim.height),size=Math.max(105,Math.min(260,frame*.46));
- var bloom=Math.max(0,1-t/1.7);
- if(bloom>0){
-  var light=g.createRadialGradient(x,y,0,x,y,size*(.7+bloom));
-  light.addColorStop(0,"rgba(255,246,219,"+(.53*bloom)+")");
-  light.addColorStop(.2,"rgba(255,187,111,"+(.35*bloom)+")");
-  light.addColorStop(1,"rgba(220,91,56,0)");
-  g.globalCompositeOperation="screen";g.fillStyle=light;g.fillRect(x-size*2,y-size*2,size*4,size*4);
-  g.globalCompositeOperation="source-over";
- }
- var progress=Math.max(0,Math.min(1,(t-.2)/6)),growth=1-Math.pow(1-progress,2.2);
- var capTop=y-size*(.18+growth*.82);
- var puffs=fxState.puffs;
- for(var i=0;i<puffs.length;i++){
-  var p=puffs[i],age=t-p.birth;if(age<0)continue;
-  var fade=Math.min(1,age*1.8)*Math.min(1,(duration-t)/1.3);
-  if(fade<=0)continue;
-  var px,py,scale;
-  if(p.kind===0){
-   var ring=Math.sqrt(p.y),r=.52+.25*Math.sin(p.wiggle);
-   px=x+size*(p.x*r*(.34+.85*growth)+Math.sin(age*.45+p.wiggle)*.025);
-   py=capTop+size*((p.y-.52)*(.25+.33*growth))+Math.sin(p.wiggle+age*.6)*size*.026;
-   scale=size*(.13+p.size*.19)*(.6+.6*growth);
-  }else if(p.kind===1){
-   px=x+size*(p.x*(.4+.2*growth))+p.drift*size*.06*growth;
-   py=y-size*(.09+p.y*.68*growth);
-   scale=size*(.12+p.size*.14)*(.5+.5*growth);
-  }else{
-   px=x+size*p.x*(.2+growth*1.2);
-   py=y+size*(.03+.16*p.y)-age*size*.025;
-   scale=size*(.09+p.size*.16)*(.9+growth*.7);
-   fade*=Math.max(0,1-age/4);
+function installMapPick(){
+ var v=state.viewer;
+ v.screenSpaceEventHandler.setInputAction(function(e){
+  if(!e||!e.position)return;
+  var pos=null,scene=v.scene;
+  // Use photogrammetric depth first only if a feature was actually hit.
+  try{if(scene.pickPositionSupported&&C.defined(scene.pick(e.position))){pos=scene.pickPosition(e.position);}}catch(err){}
+  if(!C.defined(pos)){
+   try{var ray=v.camera.getPickRay(e.position);if(C.defined(ray)&&scene.globe.show)pos=scene.globe.pick(ray,scene);}catch(err){}
   }
-  var shade=p.shade;
-  g.globalAlpha=fade*(shade===3?.67:.72)*(p.kind===2?.4:1);
-  g.drawImage(fxState.sprites[shade],px-scale*.5,py-scale*.5,scale,scale);
+  if(!C.defined(pos)){
+   try{pos=v.camera.pickEllipsoid(e.position,C.Ellipsoid.WGS84);}catch(err){}
+  }
+  if(!C.defined(pos)){status("未命中地球或三维表面，请点地图上的陆地。");return;}
+  selectMapPoint(pos,true);
+ },C.ScreenSpaceEventType.LEFT_CLICK);
+ note("地图单击/轻触选点已启用；位置与特效始终绑定经纬度");
+}
+function spawnCloud(){
+ var fx=fxWorld,v=state.viewer;
+ fx.scale=1150; // cinematic visual-world units only; NOT a model of physical impact radius
+ fx.origin=centerWorld(fx.lon,fx.lat,fx.ground+20);
+ var frame=C.Transforms.eastNorthUpToFixedFrame(fx.origin);
+ fx.collection=v.scene.primitives.add(new C.BillboardCollection({modelMatrix:frame,scene:v.scene}));
+ if(!fx.sprites)fx.sprites=[cloudTexture(0),cloudTexture(1),cloudTexture(2),cloudTexture(3),cloudTexture(4)];
+ fx.puffs=[];
+ for(var i=0;i<165;i++){
+  var a=seeded(i,1),b=seeded(i,2),d=seeded(i,3),e=seeded(i,4),f=seeded(i,5);
+  var kind=i<105?"cap":i<150?"column":"ground";
+  var source=kind==="cap"?(a>.76?3:(b>.52?1:2)):kind==="column"?(b>.55?1:4):2;
+  var particle={kind:kind,a:a,b:b,c:d,d:e,e:f,birth:kind==="cap"? .35+b*3.1:kind==="column"?.12+b*2.4:.15+b*1.1,sprite:null};
+  var bill=fx.collection.add({
+   image:fx.sprites[source],position:new C.Cartesian3(0,0,0),
+   width:fx.scale*.18,height:fx.scale*.18,sizeInMeters:true,
+   color:C.Color.fromBytes(255,255,255,0),show:false,
+   disableDepthTestDistance:Number.POSITIVE_INFINITY
+  });
+  particle.sprite=bill;fx.puffs.push(particle);
  }
- g.globalAlpha=1;
- var ambient=Math.max(0,1-t/3.6);
- if(ambient>0){
-  var haze=g.createRadialGradient(x,y,0,x,y,size);
-  haze.addColorStop(0,"rgba(252,160,103,"+(.20*ambient)+")");
-  haze.addColorStop(1,"rgba(68,74,89,0)");
-  g.globalCompositeOperation="screen";g.fillStyle=haze;g.fillRect(x-size,y-size,size*2,size*2);g.globalCompositeOperation="source-over";
+}
+function createGroundRings(){
+ var fx=fxWorld,icon=ringTexture(),v=state.viewer;
+ for(var i=0;i<3;i++){
+  (function(j){
+   var radiusFn=new C.CallbackProperty(function(){
+    var localT=fx.t-j*.48;
+    if(localT<=0)return 1;
+    var q=clamp(localT/4.6,0,1);
+    return Math.max(1,fx.scale*(.15+2.6*(1-(1-q)*(1-q))));
+   },false);
+   var colorFn=new C.CallbackProperty(function(){
+    var localT=fx.t-j*.48;
+    var opacity=localT<=0?0:clamp(localT*1.5,0,.8)*clamp((6.3-localT)/2.2,0,1);
+    return new C.Color(1,.89,.75,opacity);
+   },false);
+   var ring=v.entities.add({name:"非物理示意性扩散波 "+j,
+    position:centerWorld(fx.lon,fx.lat,fx.ground+25+j*2),
+    ellipse:{semiMajorAxis:radiusFn,semiMinorAxis:radiusFn,height:fx.ground+25+j*2,
+     material:new C.ImageMaterialProperty({image:icon,transparent:true,color:colorFn}),show:true}
+   });
+   fx.ringEntities.push(ring);
+  })(i);
  }
- fxState.raf=requestAnimationFrame(fxDraw);
+}
+function updateWorldFx(){
+ var fx=fxWorld;if(!fx.active)return;
+ var now=performance.now();if(now-fx.lastUpdate<32)return;
+ fx.lastUpdate=now;
+ fx.t=Math.min(11.4,(now-fx.start)/1000);
+ var t=fx.t,scale=fx.scale,progress=clamp((t-.35)/6.6,0,1),grow=1-Math.pow(1-progress,2);
+ for(var i=0;i<fx.puffs.length;i++){
+  var p=fx.puffs[i],age=t-p.birth,b=p.sprite;
+  if(age<0){b.show=false;continue;}
+  var vis=clamp(age*2.3,0,1);
+  if(t>8.4&&p.kind==="ground")vis*=clamp((11.4-t)/3,0,1);
+  var angle=p.a*6.2832,px,py,pz,diameter;
+  if(p.kind==="cap"){
+   var radius=scale*(.06+(p.b*.43+.11)*grow);
+   px=Math.cos(angle)*radius+scale*(p.d-.5)*.12;
+   py=Math.sin(angle)*radius*.8+scale*(p.e-.5)*.12;
+   pz=scale*(.50+grow*.62+(p.c-.5)*.18);
+   diameter=scale*(.16+p.d*.25)*(.42+grow*.85);
+  }else if(p.kind==="column"){
+   px=scale*(p.a-.5)*(.15+grow*.12);
+   py=scale*(p.b-.5)*(.16+grow*.12);
+   pz=scale*(.10+grow*(.25+p.c*.56));
+   diameter=scale*(.10+.19*p.e)*(.55+grow*.48);
+  }else{
+   px=scale*(p.a-.5)*(.25+grow*1.35);
+   py=scale*(p.b-.5)*(.25+grow*1.35);
+   pz=scale*(.02+p.c*.12);
+   diameter=scale*(.12+p.d*.19)*(.4+grow*.65);
+  }
+  var smooth=clamp((t-p.birth)/4,0,1);
+  b.show=vis>.015;
+  b.position=new C.Cartesian3(px,py,pz*smooth);
+  b.width=diameter;b.height=diameter;
+  b.color=new C.Color(1,1,1,(p.kind==="ground"?.32:.73)*vis);
+ }
+ if(t>=11.4){fx.active=false;fx.settled=true;status("云雾示意已停留在地球坐标中；可以继续缩放或旋转观察。");}
 }
 function plotEffect(){
- fxInit();makeFxPuffs();fxState.running=true;
- cancelAnimationFrame(fxState.raf);fxState.t0=performance.now();
- fxState.canvas.classList.add("play");$("fxCaption").classList.add("active");
- note("播放电影化地图锚定的多层云雾/柔光动画；是视觉演示而非物理预测");
- fxState.raf=requestAnimationFrame(fxDraw);
+ if(!state.viewer){status("请先成功加载地图，再进行示意演示");return;}
+ if(!Number.isFinite(fxWorld.lon)||!Number.isFinite(fxWorld.lat)){status("请先轻触地图选点");return;}
+ disposeWorldFx();
+ spawnCloud();createGroundRings();
+ fxWorld.start=performance.now();fxWorld.t=0;fxWorld.lastUpdate=0;fxWorld.active=true;
+ $("fxCaption").classList.add("active");
+ note("已在 "+fxWorld.lat.toFixed(5)+","+fxWorld.lon.toFixed(5)+" 创建 3D 经纬度锚定的云团和装饰性扩散环");
+ setTimeout(function(){$("fxCaption").classList.remove("active");},3600);
 }
-function anchor(){
- if(!state.viewer)return;
- try{
-  var pos=C.Cartesian3.fromDegrees(state.lon,state.lat,40);
-  var xy=C.SceneTransforms.wgs84ToWindowCoordinates(state.viewer.scene,pos);
-  if(xy&&Number.isFinite(xy.x)&&Number.isFinite(xy.y)){
-   fxState.anchorX=xy.x;fxState.anchorY=xy.y;
-  }
- }catch(e){}
-}
+function anchor(){updateWorldFx();}
 function renderStats(){
  if(!state.viewer)return;
  var n=state.frameTimes.length,t=perf.now(),re=state.frameTimes.filter(function(v){return t-v<2000;});
@@ -386,7 +441,7 @@ async function measure(){
  state.entries.push(record);$("testStatus").textContent="已采样 "+state.entries.length+" 组";note("实机采样："+mode+"/"+layer+" | "+record.averageSceneFps+" FPS | 新增资源记录 "+record.resourceEntriesDelta);
 }
 function download(){
- var payload={title:"Geo Experience Lab V0.3",exportedAt:new Date().toISOString(),tests:state.entries,assumptions:"静态网页不会收集供应商账单；成本为基于公开价的情景测算，实际用量须来自提供商计费后台。"};
+ var payload={title:"Geo Experience Lab V0.4",exportedAt:new Date().toISOString(),tests:state.entries,assumptions:"静态网页不会收集供应商账单；成本为基于公开价的情景测算，实际用量须来自提供商计费后台。"};
  var blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="geo-lab-measurements.json";a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
 }
 async function init(){
@@ -395,7 +450,7 @@ async function init(){
  try{
   var viewer=state.viewer=new C.Viewer("cesium",{baseLayerPicker:false,baseLayer:false,terrainProvider:new C.EllipsoidTerrainProvider(),animation:false,timeline:false,homeButton:false,geocoder:false,navigationHelpButton:false,sceneModePicker:false,selectionIndicator:false,infoBox:false,fullscreenButton:false,requestRenderMode:false});
   viewer.scene.globe.depthTestAgainstTerrain=false;viewer.scene.screenSpaceCameraController.minimumZoomDistance=30;viewer.camera.setView({destination:C.Cartesian3.fromDegrees(state.lon,state.lat,state.height),orientation:{heading:0,pitch:C.Math.toRadians(state.pitch),roll:0}});
-  viewer.scene.postRender.addEventListener(function(){state.frameTimes.push(perf.now());if(state.frameTimes.length>1000)state.frameTimes.splice(0,400);anchor();});
+  viewer.scene.postRender.addEventListener(function(){state.frameTimes.push(perf.now());if(state.frameTimes.length>1000)state.frameTimes.splice(0,400);anchor();});installMapPick();fxWorld.lon=state.lon;fxWorld.lat=state.lat;fxWorld.ground=0;
   $("runtimeStatus").textContent="已初始化";await activate("A");setInterval(renderStats,2000);
  }catch(e){$("runtimeStatus").textContent="初始化失败";showFallback("WebGL / Cesium 初始化失败");status(String(e.message||e));}
 }
