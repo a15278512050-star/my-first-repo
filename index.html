@@ -38,7 +38,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.135.0/Build/Cesium/Cesium.js" defer></script>
 </head>
 <body>
-<header class="top"><div><div class="brand">GEO<span style="color:#ff823a"> / </span>EXPERIENCE LAB <b>v0.5</b></div><div class="sub">全球地图 · A/B/C 技术可行性验证 · 产品经理评审视图</div></div><div class="pill">公开展示页 · 非生产环境</div></header>
+<header class="top"><div><div class="brand">GEO<span style="color:#ff823a"> / </span>EXPERIENCE LAB <b>v0.5.1</b></div><div class="sub">全球地图 · A/B/C 技术可行性验证 · 产品经理评审视图</div></div><div class="pill">公开展示页 · 非生产环境</div></header>
 <main class="app">
  <section class="left">
   <div class="controls">
@@ -337,11 +337,13 @@ function spawnCloud(){
  fx.collection=v.scene.primitives.add(new C.BillboardCollection({modelMatrix:frame,scene:v.scene}));
  if(!fx.sprites)fx.sprites=[cloudTexture(0),cloudTexture(1),cloudTexture(2),cloudTexture(3),cloudTexture(4)];
  fx.puffs=[];
- for(var i=0;i<165;i++){
+ // Art-directed cap-and-column silhouette (non-physical).
+ for(var i=0;i<240;i++){
   var a=seeded(i,1),b=seeded(i,2),d=seeded(i,3),e=seeded(i,4),f=seeded(i,5);
-  var kind=i<105?"cap":i<150?"column":"ground";
-  var source=kind==="cap"?(a>.76?3:(b>.52?1:2)):kind==="column"?(b>.55?1:4):2;
-  var particle={kind:kind,a:a,b:b,c:d,d:e,e:f,birth:kind==="cap"? .35+b*3.1:kind==="column"?.12+b*2.4:.15+b*1.1,sprite:null};
+  var kind=i<116?"dome":i<178?"rim":i<227?"column":"ground";
+  var source=kind==="dome"?(b>.54?3:1):kind==="rim"?(a>.42?2:4):kind==="column"?(e>.55?2:1):4;
+  var birth=kind==="dome"?.42+b*1.5:kind==="rim"?.72+b*2:kind==="column"?.2+b*2.25:.3+b*.95;
+  var particle={kind:kind,a:a,b:b,c:d,d:e,e:f,birth:birth,sprite:null};
   var bill=fx.collection.add({
    image:fx.sprites[source],position:new C.Cartesian3(0,0,0),
    width:fx.scale*.18,height:fx.scale*.18,sizeInMeters:true,
@@ -384,31 +386,39 @@ function updateWorldFx(){
  for(var i=0;i<fx.puffs.length;i++){
   var p=fx.puffs[i],age=t-p.birth,b=p.sprite;
   if(age<0){b.show=false;continue;}
-  var vis=clamp(age*2.3,0,1);
+  var vis=clamp(age*1.75,0,1);
   if(t>8.4&&p.kind==="ground")vis*=clamp((11.4-t)/3,0,1);
-  var angle=p.a*6.2832,px,py,pz,diameter;
-  if(p.kind==="cap"){
-   var radius=scale*(.06+(p.b*.43+.11)*grow);
-   px=Math.cos(angle)*radius+scale*(p.d-.5)*.12;
-   py=Math.sin(angle)*radius*.8+scale*(p.e-.5)*.12;
-   pz=scale*(.50+grow*.62+(p.c-.5)*.18);
-   diameter=scale*(.16+p.d*.25)*(.42+grow*.85);
+  var angle=p.a*6.283185,px,py,pz,diameter;
+  if(p.kind==="dome"){
+   var r=Math.sqrt(p.b)*(.07+.46*grow);
+   px=Math.cos(angle)*scale*r+scale*(p.d-.5)*.045;
+   py=Math.sin(angle)*scale*r*.91+scale*(p.e-.5)*.045;
+   pz=scale*(.68+grow*.72+(1-p.b)*.22+(p.c-.5)*.12);
+   diameter=scale*(.22+p.d*.13)*(.44+grow*.76);
+  }else if(p.kind==="rim"){
+   var rimR=(.34+.16*grow)+(p.b-.5)*.14;
+   px=Math.cos(angle)*scale*rimR;
+   py=Math.sin(angle)*scale*rimR*.88;
+   pz=scale*(.66+grow*.67+(p.c-.5)*.12);
+   diameter=scale*(.19+p.d*.19)*(.5+grow*.73);
   }else if(p.kind==="column"){
-   px=scale*(p.a-.5)*(.15+grow*.12);
-   py=scale*(p.b-.5)*(.16+grow*.12);
-   pz=scale*(.10+grow*(.25+p.c*.56));
-   diameter=scale*(.10+.19*p.e)*(.55+grow*.48);
+   var stemR=scale*(.10+.10*p.b)*(.85+.3*grow);
+   px=Math.cos(angle)*stemR;
+   py=Math.sin(angle)*stemR;
+   pz=scale*(.08+grow*(.22+p.c*.70));
+   diameter=scale*(.16+.12*p.e)*(.60+grow*.62);
   }else{
-   px=scale*(p.a-.5)*(.25+grow*1.35);
-   py=scale*(p.b-.5)*(.25+grow*1.35);
-   pz=scale*(.02+p.c*.12);
-   diameter=scale*(.12+p.d*.19)*(.4+grow*.65);
+   px=scale*(p.a-.5)*(.20+grow*.83);
+   py=scale*(p.b-.5)*(.20+grow*.83);
+   pz=scale*(.02+p.c*.10);
+   diameter=scale*(.11+p.d*.13)*(.42+grow*.62);
+   vis*=.35;
   }
-  var smooth=clamp((t-p.birth)/4,0,1);
+  var smooth=clamp((t-p.birth)/3.6,0,1);
   b.show=vis>.015;
   b.position=new C.Cartesian3(px,py,pz*smooth);
   b.width=diameter;b.height=diameter;
-  b.color=new C.Color(1,1,1,(p.kind==="ground"?.32:.73)*vis);
+  b.color=new C.Color(1,1,1,(p.kind==="ground"?.27:.70)*vis);
  }
  if(t>=11.4){fx.active=false;fx.settled=true;syncPlayButton();status("本次视觉演示结束；原点保持固定。选择新的位置，再按按钮才会再次播放。");}
 }
