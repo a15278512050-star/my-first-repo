@@ -43,7 +43,7 @@ history.replaceState({},"",url.toString());
 function navigate(term){
 let q=term.toLocaleLowerCase().trim();
 let found=cities.find(c=>c[0].toLocaleLowerCase()===q)||cities.find(c=>c[0].toLocaleLowerCase().includes(q));
-if(!found){$("actionInfo").textContent="Only 20 indexed cities are available in this demo. Click anywhere for a precise selection.";return;}
+if(!found){$("actionInfo").textContent="The offline city index has 20 entries. You can click any place on the map.";return;}
 s.map.flyTo([found[1],found[2]],12,{duration:1.1});status("Navigated to "+found[0]+" • now click the map");
 $("actionInfo").textContent="Search moved the camera only; your selected position was not changed.";
 }
@@ -86,46 +86,51 @@ ctx.beginPath();ctx.arc(0,0,radius+13,0,Math.PI*2);ctx.stroke();
 ctx.restore();
 }
 function cloud(ctx,x,y,scale,t){
-let progress=smooth((t-.02)/.82);
-if(progress<=0)return;
-let width=440*scale*(.12+.88*progress),height=330*scale*(.07+.93*progress),cap=y-height*.75;
-ctx.save();
-for(let i=0;i<31;i++){
-let k=i/30,r=width*(.05+.04*k);
-puff(ctx,x+(rand(i+60)-.5)*width*(.11+.2*k),y-height*(.02+.73*k),r,.75,i%7===0,1.15);
-}
-for(let i=0;i<82;i++){
-const a=rand(i+310)*Math.PI*2,rad=Math.sqrt(rand(i+200));
-let px=x+Math.cos(a)*rad*width*.45,py=cap+Math.sin(a)*rad*height*.19;
-puff(ctx,px,py,width*(.045+.037*rand(i+330)),.77,i%6===0,.76+.3*rand(i+390));
-}
-for(let i=0;i<32;i++){
-let a=2*Math.PI*i/32;
-puff(ctx,x+Math.cos(a)*width*.44,cap+Math.sin(a)*height*.16,width*(.055+.02*rand(i+420)),.85,i%5===0,.78);
-}
-for(let i=0;i<19;i++){
-let px=x+(rand(i+500)-.5)*width*.85,py=y+height*(.03+rand(i+510)*.07);
-puff(ctx,px,py,width*(.055+.04*rand(i+520)),.51,i%4===0,.48);
-}
-ctx.restore();
+  const growth=smooth((t-.018)/.80);
+  if(growth<=0)return;
+  // Viewport-relative cinematic art, not weapon physics or real-world distance.
+  const width=Math.min(300,s.fxWidth*.42)*scale*(.13+.87*growth);
+  const height=Math.min(258,s.fxHeight*.56)*scale*(.08+.92*growth);
+  const crown=y-height*.77;
+  ctx.save();
+  for(let i=0;i<26;i++){
+    const z=width*(.08+.055*rand(i+700))*smooth(t/.25);
+    puff(ctx,x+(rand(i+710)-.5)*width*.94,y+height*(.015+.07*rand(i+720)),z,.44,i%5===0,.42);
+  }
+  for(let i=0;i<45;i++){
+    const k=i/44,neck=width*(.045+.05*k);
+    puff(ctx,x+(rand(i+80)-.5)*neck*2+Math.sin(k*3.2+t*1.5)*width*.009,y-height*(.06+.70*k),width*(.042+.027*k),.72,i%8===0,1.05+.2*rand(i+300));
+  }
+  for(let i=0;i<122;i++){
+    const a=rand(i+310)*Math.PI*2,r=Math.sqrt(rand(i+305));
+    puff(ctx,x+Math.cos(a)*r*width*.46,crown+Math.sin(a)*r*height*.17,width*(.04+.039*rand(i+330)),.76,i%7===0,.75+.35*rand(i+390));
+  }
+  for(let i=0;i<44;i++){
+    const a=2*Math.PI*i/44;
+    puff(ctx,x+Math.cos(a)*width*.44,crown+Math.sin(a)*height*.17,width*(.052+.02*rand(i+420)),.82,i%4===0,.8);
+  }
+  for(let i=0;i<21;i++){
+    puff(ctx,x+(rand(i+520)-.5)*width*.68,crown-height*(.01+.10*rand(i+525)),width*(.026+.023*rand(i+530)),.35,true,.74);
+  }
+  ctx.restore();
 }
 function paint(t){
 fit();const ctx=s.fxCtx;ctx.clearRect(0,0,s.fxWidth,s.fxHeight);
 if(!s.anchor||!s.map)return;
 const p=s.map.latLngToContainerPoint([s.anchor.lat,s.anchor.lng]);
 if(!Number.isFinite(p.x)||!Number.isFinite(p.y))return;
-const scale=Math.max(.07,Math.min(11,Math.pow(2,s.map.getZoom()-s.referenceZoom)));
+const scale=Math.max(.12,Math.min(6,Math.pow(2,s.map.getZoom()-s.referenceZoom)));
 if(p.x<-900*scale||p.x>s.fxWidth+900*scale||p.y<-900*scale||p.y>s.fxHeight+900*scale)return;
 const x=p.x,y=p.y;
 let light=1-smooth(t/.27);
 if(light>0){
-let g=ctx.createRadialGradient(x,y,2,x,y,145*scale);
+let g=ctx.createRadialGradient(x,y,2,x,y,105*scale);
 g.addColorStop(0,"rgba(255,244,203,"+(.7*light)+")");
 g.addColorStop(.4,"rgba(255,145,64,"+(.48*light)+")");
 g.addColorStop(1,"rgba(255,117,45,0)");
-ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,145*scale,0,2*Math.PI);ctx.fill();
+ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,105*scale,0,2*Math.PI);ctx.fill();
 }
-[[.03,.85],[.15,.68],[.29,.54]].forEach(([delay,size])=>{
+[[.04,.57],[.17,.46],[.31,.35]].forEach(([delay,size])=>{
 let q=(t-delay)/.75;if(q>0&&q<1){
 drawRing(ctx,x,y,(20+550*size*smooth(q))*scale,Math.pow(1-q,.7),.5);
 }});
